@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 hazelcast = "*"
 hazelcast-python-client = "*"
+mininet = "*"
 
 [requires]
 python_version = "3.7"

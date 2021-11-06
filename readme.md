@@ -96,14 +96,14 @@ mininet> sh ovs-ofctl dump-flows s1
 
 * Insert flow entry manually. This will forward all of h4's flows to h1.
 ```bash
-mininet> sh ovs-ofctl add-flow s1 in_port=4,actions=output:1
+$ mininet> sh ovs-ofctl add-flow s1 in_port=4,actions=output:1
 ```
 
 * Download & extract HazelCast IMDG from https://hazelcast.com/open-source-projects/downloads/#hazelcast-imdg
 
 * On mininet, open xterm terminal for h1 h2 h3:
 ```bash
-mininet> xterm h1 h2 h3
+$ mininet> xterm h1 h2 h3
 ```
 
 * On each xterm host, change directory to the hazelcast folder. Create and join the hosts to the cluster. Each host would acknowledge each other
