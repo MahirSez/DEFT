@@ -48,3 +48,37 @@ OpenNF code notes
 		-> sdmbnmanager.move() -> MoveOperation.execute() -> MoveOperation.issueGet()
 
 
+
+
+## Installing Flow
+--------------------
+
+1. Match: In Floodlight, each match is an object of org.openflow.protocol.OFMatch.
+2. examples of Matches: 
+– <src ip: 10.0.0.2, dst ip 10.0.0.3, src port: 90>
+– <src mac addr: 00:0a:95:9d:68:16>
+– <vlan tag: 4000, protocol: ipv4>
+
+
+3. Action: A set of operations associated with a match, for all packets with the same match, the operations will be applied
+4. examples of Actions: 
+– <output on port 2>
+– <set dst IP address to 10.0.0.3>
+– <set mac address to 00:0a:95:9d:68:16>
+
+5. In Floodlight, each actions is a object of org.openflow.protocol.OFAction – org.openflow.protocol.action.OFAction
+
+6. FlowMod is the message regarding flow installation/deletion
+7. There are a number of different types of messages a controller can send to a switch, i.e.: 
+– to query port stats: OFPortStatus 
+– to query vendor: OFVendor 
+– to modify status of a port: OFPortMod
+
+8. In Floodlight, each FlowMod message is a object of OFFlowMod: – org.openflow.protocol.OFFlowMod
+
+9. To install a flow
+– 1. create a FlowMod message
+– 2.	 specify the match of the flow in the message
+– 3. specify the actions for the flow
+	• <output> in this case 
+– 4. send the message to the switch

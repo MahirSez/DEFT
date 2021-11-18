@@ -61,7 +61,7 @@ public class MiddleboxDiscovery implements IOFMessageListener
 				pi.getPacketData().length);
 		
 		String jsonstring = new String(payload);
-//		DiscoveryMessage discovery = gson.fromJson(jsonstring,
+		DiscoveryMessage discovery = gson.fromJson(jsonstring,
 				DiscoveryMessage.class);
 	
 		sdmbnManager.middleboxDiscovered(discovery, sw, pi.getInPort());

@@ -1,12 +1,17 @@
 package com.ftnet;
 
+import net.floodlightcontroller.core.IFloodlightProviderService;
+import net.floodlightcontroller.core.IOFMessageListener;
+import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
+import org.openflow.protocol.OFType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -16,7 +21,10 @@ import java.util.concurrent.TimeUnit;
 public class FTManager implements IFloodlightModule {
 
     protected static Logger log = LoggerFactory.getLogger(FTManager.class.getSimpleName());
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private IOFSwitch iofSwitch;
+    private IFloodlightProviderService floodlightProvider;
+    OFListener ofListener;
 
     /**
      * Return the list of interfaces that this module implements.
@@ -52,7 +60,10 @@ public class FTManager implements IFloodlightModule {
      */
     @Override
     public Collection<Class<? extends IFloodlightService>> getModuleDependencies() {
-        return null;
+        Collection<Class<? extends IFloodlightService>> l =
+                new ArrayList<Class<? extends IFloodlightService>>();
+        l.add(IFloodlightProviderService.class);
+        return l;
     }
 
     /**
@@ -67,14 +78,21 @@ public class FTManager implements IFloodlightModule {
      */
     @Override
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
+        floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
+        ofListener = new OFListener(this);
     }
 
     void startListening() {
-        scheduler.schedule(new ServerListener(),2, TimeUnit.SECONDS);
+        scheduler.schedule(new ServerListener(this),2, TimeUnit.SECONDS);
     }
     void startSending() {
         scheduler.schedule(new HostCommand(),2, TimeUnit.SECONDS);
     }
+    void setSwitch(IOFSwitch sw) {
+        log.debug("Switch set in");
+        this.iofSwitch = sw;
+    }
+    IOFSwitch getSwitch() { return this.iofSwitch; }
 
     /**
      * This is a hook for each module to do its <em>external</em> initializations,
@@ -87,7 +105,9 @@ public class FTManager implements IFloodlightModule {
      */
     @Override
     public void startUp(FloodlightModuleContext context) {
-        startSending();
+//        startSending();
         startListening();
+        floodlightProvider.addOFMessageListener(OFType.PACKET_IN, ofListener);
+        floodlightProvider.addOFSwitchListener(ofListener);
     }
 }
