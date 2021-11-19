@@ -64,9 +64,9 @@ public class HostCommand implements Runnable{
      */
     @Override
     public void run() {
-        log.debug("HostCommand called after every 2 seconds");
+        log.debug("HostCommand called after every 200 seconds");
         if(connectSocket()) writeCommand();
-        log.debug("Scheduling after 2 seconds");
-        scheduler.schedule(new HostCommand(),2, TimeUnit.SECONDS);
+        log.debug("Scheduling after 200 seconds");
+        scheduler.schedule(new HostCommand(),200, TimeUnit.SECONDS);
     }
 }

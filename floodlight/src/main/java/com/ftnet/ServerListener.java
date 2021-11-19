@@ -7,35 +7,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class ServerListener implements Runnable{
     ServerSocket serverSocket;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     protected static Logger log = LoggerFactory.getLogger(ServerListener.class.getSimpleName());
+    private FTManager ftManager;
 
-    ServerListener() {
+    ServerListener(FTManager ftManager) {
         try {
             serverSocket = new ServerSocket(6666);
+            this.ftManager = ftManager;
         } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
     private void read(Socket socket) {
-        try {
-            log.debug("reading from socket");
-            byte[] buffer = new byte[1024];
-            int read;
-            InputStream is = socket.getInputStream();
-            while((read = is.read(buffer)) != -1) {
-                String output = new String(buffer, 0, read);
-                log.debug("Socket output:\n" + output);
-            };
-            socket.close();
-        }
-        catch (IOException e) {
-            log.error("Error occurred while sending command");
-        }
+
     }
 
 
@@ -56,7 +49,8 @@ public class ServerListener implements Runnable{
             log.info("Starting to listen for incoming connections");
             while(true) {
                 Socket socket = this.serverSocket.accept();
-                read(socket);
+                scheduler.schedule(new CommandHandler(socket, ftManager), 0, TimeUnit.SECONDS);
+//                read(socket);
             }
         } catch (IOException e) {
             e.printStackTrace();
