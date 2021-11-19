@@ -42,7 +42,6 @@ def process_a_pkt(pkt):
 
 
 def load_hazelcast():
-    logging.basicConfig(level=logging.INFO)
     # factory = {
     #     1: Flow
     # }
@@ -75,16 +74,25 @@ def process_packet_with_hazelcast():
 
 
 def main(
-        interface: str = typer.Option(..., '--iface', '-i', help='Interface to run the sniffer on'),
-        filter: str = typer.Option('tcp', '--filter', '-f', help='Filter on interface sniffing')
+        interface:  str = typer.Option(..., '--iface', '-i', help='Interface to run the sniffer on'),
+        filter:     str = typer.Option('icmp', '--filter', '-f', help='Filter on interface sniffing'),
+        ip:         str = typer.Option('', '--dip', help='destination Ip')
 
 ):
+    logging.basicConfig(level=logging.INFO)
+
+    if len(ip) != 0:    #  ip provided 
+        filter += ' and dst {}'.format(ip)
+
+    logging.info("Using Filter " + filter)
+
     load_hazelcast()
 
     hazelcast_thread = threading. \
         Thread(target=process_packet_with_hazelcast)
 
     hazelcast_thread.start()
+
 
     sniffer.sniffer({
         'filter': filter,
