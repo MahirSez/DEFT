@@ -3,3 +3,5 @@ hazelcast==0.1.0
 hazelcast-python-client==5.0.1
 scapy==2.4.5
 typer==0.4.0
+
+mininet~=2.3.0.dev6
