@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../hazelCast/.idea/hazelCast.iml" filepath="$PROJECT_DIR$/../hazelCast/.idea/hazelCast.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/hazelCast.iml" filepath="$PROJECT_DIR$/.idea/hazelCast.iml" />
     </modules>
   </component>
 </project>
