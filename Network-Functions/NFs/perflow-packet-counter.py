@@ -2,12 +2,17 @@ import logging
 import queue
 import threading
 import typer
+import redis
+import socket
+
 
 import hazelcast
 from scapy.layers.inet import IP, TCP
 
 import sniffer
 
+host_var = None
+redis_client = None
 per_flow_packet_counter = None
 flow_queue = queue.Queue(maxsize=1000000)
 received_packets = 0
@@ -35,6 +40,7 @@ def process_a_pkt(pkt):
     global received_packets
 
     received_packets += 1
+    redis_client.incr(host_var)
     flow = get_flow_from_pkt(pkt)
     logging.info("Putting flow {} into queue".format(flow))
     # logging.debug("received packets {}".format(received_packets))
@@ -42,13 +48,11 @@ def process_a_pkt(pkt):
 
 
 def load_hazelcast():
-    # factory = {
-    #     1: Flow
-    # }
     # Connect to Hazelcast cluster.
     client = hazelcast.HazelcastClient(
         cluster_members=[
-            "10.0.0.1:5701"
+            # "10.0.0.1:5701"
+            "192.168.1.1:5701"
         ],
         # data_serializable_factories={
         #     1: factory
@@ -73,18 +77,36 @@ def process_packet_with_hazelcast():
         per_flow_packet_counter.unlock(flow)
 
 
+
+def set_host_var():
+    global host_var
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    host_var = s.getsockname()[0]
+    s.close()
+
+
 def main(
         interface:  str = typer.Option(..., '--iface', '-i', help='Interface to run the sniffer on'),
         filter:     str = typer.Option('icmp', '--filter', '-f', help='Filter on interface sniffing'),
         ip:         str = typer.Option('', '--dip', help='destination Ip')
 
 ):
+    global redis_client
     logging.basicConfig(level=logging.INFO)
 
     if len(ip) != 0:    #  ip provided 
         filter += ' and dst {}'.format(ip)
 
-    logging.info("Using Filter " + filter)
+
+    logging.info("Using Filter " + filter + " on interface " + interface)
+    logging.info("Connecting to Redis Server")
+    redis_client = redis.Redis(host='192.168.1.1', port=6379, db=0)
+    set_host_var()
+    redis_client.set(host_var, 0)
+
+
+
 
     load_hazelcast()
 

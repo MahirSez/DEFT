@@ -49,6 +49,23 @@ class SingleRouterTopo(Topo):
 	# link.intf1.setIP('192.168.0.254', 24)
 
 
+def setup(net):
+	net['h1'].cmd("xterm -hold -e 'redis-server --protected-mode no' &")
+	# net['h1'].cmd("redis-cli flushall")
+
+	for i in range(1, 2):
+		net['h%s'%i].cmd("xterm -hold -e 'bash hazelcast-4.2.2/bin/start.sh' &")
+
+	for i in range(1, 2):
+		net['h%s'%i].cmd("xterm -hold -e 'source nf_script.sh %s' &" %i)
+
+	# for i in range(1, 2):
+	# 	net['h%s'%i].cmd("xterm -hold -e 'bash host_script.sh %s' &" %i)
+
+
+
+
+
 if __name__ == '__main__':
 	setLogLevel('info')
 
@@ -65,6 +82,8 @@ if __name__ == '__main__':
 	net.start()
 	info('*** Routing Table on Router:\n')
 	print(net['gate'].cmd('route -n'))
+	setup(net)
+	
 	CLI(net)
 	net.stop()
 

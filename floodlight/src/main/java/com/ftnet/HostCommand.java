@@ -13,11 +13,15 @@ import java.util.concurrent.TimeUnit;
 
 public class HostCommand implements Runnable{
 
+    private final int DELAY = 5;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     protected static Logger log = LoggerFactory.getLogger(HostCommand.class.getSimpleName());
     private final Socket sock;
-    HostCommand() {
+    private final FTManager ftManager;
+
+    HostCommand(FTManager ftManager) {
         this.sock = new Socket();
+        this.ftManager = ftManager;
     }
 
     private boolean connectSocket() {
@@ -41,8 +45,7 @@ public class HostCommand implements Runnable{
         try {
             log.debug("sending start command" );
             PrintWriter out = new PrintWriter(this.sock.getOutputStream());
-            out.println("start");
-//            out.println(String.format("%s %s %d %d", command, "capture.pcap", this.rate, this.numPkts));
+            out.println("packet_count");
             out.flush();
             sock.close();
         }
@@ -64,9 +67,10 @@ public class HostCommand implements Runnable{
      */
     @Override
     public void run() {
-        log.debug("HostCommand called after every 200 seconds");
+        log.debug("HostCommand called after every " + DELAY + " seconds");
+
         if(connectSocket()) writeCommand();
-        log.debug("Scheduling after 200 seconds");
-        scheduler.schedule(new HostCommand(),200, TimeUnit.SECONDS);
+        log.debug("Scheduling after " + DELAY + " seconds");
+        scheduler.schedule(new HostCommand(ftManager),DELAY, TimeUnit.SECONDS);
     }
 }

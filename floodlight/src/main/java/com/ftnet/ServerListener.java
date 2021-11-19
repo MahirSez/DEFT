@@ -50,7 +50,6 @@ public class ServerListener implements Runnable{
             while(true) {
                 Socket socket = this.serverSocket.accept();
                 scheduler.schedule(new CommandHandler(socket, ftManager), 0, TimeUnit.SECONDS);
-//                read(socket);
             }
         } catch (IOException e) {
             e.printStackTrace();

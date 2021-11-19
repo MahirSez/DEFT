@@ -25,7 +25,6 @@ echo "Send on interface $INTERFACE"
 echo "Starting traceload server"
 echo "Listening for commands on $LISTEN_IP:$LISTEN_PORT"
 nc $KEEP -l $LISTEN_IP $LISTEN_PORT | while read COMMAND; do
-    echo "here1"
     echo $COMMAND
     TOKENS=($COMMAND)
     ACTION=${TOKENS[0]}

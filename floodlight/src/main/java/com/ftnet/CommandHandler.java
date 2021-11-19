@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 public class CommandHandler implements Runnable {
 
+    private final String HELLO = "hello";
     private final String READY = "ready";
     private final String START = "start";
     private final String OVERLOAD = "overload";
@@ -106,6 +107,9 @@ public class CommandHandler implements Runnable {
     private void handle(String output) {
         log.debug(ipAddr + " said: " + output);
         switch (output) {
+            case HELLO:
+                ftManager.addHost(ipAddr);
+                break;
             case READY:
                 addFlow(5, 1);
                 send(START);

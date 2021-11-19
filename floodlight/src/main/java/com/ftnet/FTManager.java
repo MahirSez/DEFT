@@ -25,6 +25,7 @@ public class FTManager implements IFloodlightModule {
     private IOFSwitch iofSwitch;
     private IFloodlightProviderService floodlightProvider;
     OFListener ofListener;
+    private ArrayList<String> connectedHosts;
 
     /**
      * Return the list of interfaces that this module implements.
@@ -80,14 +81,23 @@ public class FTManager implements IFloodlightModule {
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
         floodlightProvider = context.getServiceImpl(IFloodlightProviderService.class);
         ofListener = new OFListener(this);
+        connectedHosts = new ArrayList<>();
     }
 
     void startListening() {
         scheduler.schedule(new ServerListener(this),2, TimeUnit.SECONDS);
     }
     void startSending() {
-        scheduler.schedule(new HostCommand(),2, TimeUnit.SECONDS);
+        scheduler.schedule(new HostCommand(this),2, TimeUnit.SECONDS);
     }
+    void addHost(String ipAddr) {
+        if(!connectedHosts.contains(ipAddr)) {
+            log.info("Adding new host " + ipAddr);
+            connectedHosts.add(ipAddr);
+            log.info("Current hosts: " + connectedHosts);
+        }
+    }
+
     void setSwitch(IOFSwitch sw) {
         log.debug("Switch set in");
         this.iofSwitch = sw;
@@ -105,7 +115,7 @@ public class FTManager implements IFloodlightModule {
      */
     @Override
     public void startUp(FloodlightModuleContext context) {
-//        startSending();
+        startSending();
         startListening();
         floodlightProvider.addOFMessageListener(OFType.PACKET_IN, ofListener);
         floodlightProvider.addOFSwitchListener(ofListener);

@@ -15,10 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class MACTracker implements IOFMessageListener, IFloodlightModule {
@@ -77,7 +74,6 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
      */
     @Override
     public Command receive(IOFSwitch sw, OFMessage msg, FloodlightContext cntx) {
-        logger.debug("Received");
         Ethernet eth =
                 IFloodlightProviderService.bcStore.get(cntx,
                         IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
@@ -87,7 +83,7 @@ public class MACTracker implements IOFMessageListener, IFloodlightModule {
         if (!macAddresses.contains(sourceMACHash)) {
             macAddresses.add(sourceMACHash);
             logger.info("MAC Address: {} seen on switch: {}",
-                    eth.getSourceMACAddress().toString(),
+                    eth.getSourceMAC(),
                     sw.getId());
         }
         return Command.CONTINUE;
