@@ -23,33 +23,43 @@ class SingleSwitchTopo(Topo):
             self.addLink(host, switch)
 
 
+def get_last_background_prcoess_id(h):
+    id = int(h.cmd('echo $!'))
+    return id
+
+
 def server(h):
     print("Opening Server on host 1")
     h.cmd("xterm -hold -e 'bash ../../hazelcast-4.2.2/bin/start.sh' &")
+    return get_last_background_prcoess_id(h)
 
 
 def host(net, id):
     h = net.get("h" + str(id))
     ip = h.IP(intf=("h"+str(id)+"-eth0"))
-
     print("Opening client node h" + str(id) + " ip :{}".format(ip))
-    
     cmd = "xterm -hold -e 'source venv/bin/activate; python perflow-packet-counter.py -i h{}-eth0 -f icmp --dip={}' &".\
         format(id, ip)
     print(cmd)
-
     h.cmd(cmd)
+    return get_last_background_prcoess_id(h)
 
 
 def setUp(net):
-    h1= net.get('h1')
+    background_process_list = []  # (host, pid) tuple
 
-    server(h1)
+    h1 = net.get('h1')
+    id = server(h1)
+    background_process_list.append((h1, id))
     sleep(10)
 
     for i in range(2, 5): 
-        host(net, i)
+        h = net.get("h" + str(i))
+        id = host(net, i)
+        background_process_list.append((h, id))
         sleep(5)
+    
+    return background_process_list 
 
 
 def runTest(net):
@@ -61,10 +71,20 @@ def runTest(net):
     # h4.cmd('ping -c 100 -i 0.02 10.0.0.2 &')
 
 #   ping test: h2-> h3 -> h4 -> h3; exp output: h2:100, h3:300, h4:200 
+    background_tasks = []
     h2.cmd('ping -c 100 -i 0.02 10.0.0.3 &')
+    background_tasks.append((h2, get_last_background_prcoess_id(h2)))
     h3.cmd('ping -c 100 -i 0.02 10.0.0.4 &')
+    background_tasks.append((h3, get_last_background_prcoess_id(h3)))
     h4.cmd('ping -c 100 -i 0.02 10.0.0.3 &')
+    background_tasks.append((h4, get_last_background_prcoess_id(h4)))
 
+
+    while background_tasks:
+        h, id = background_tasks.pop()
+        h.cmd('wait', id)
+
+    print("All pings ended")
 
 
 def perfTest():
@@ -78,15 +98,22 @@ def perfTest():
     dumpNodeConnections(net.hosts)
 
 
-    setUp(net)
+    daemons = setUp(net)
 
     runTest(net)
 
-    # sleep(50)
-    for h in net.hosts:
-        h.monitor()
+    print("Enter 9 to kill all process")
+    while True:
+       inp = int(input()) 
+       if inp == 9: break
 
+
+    while daemons:
+        h, id = daemons.pop()
+        h.cmd('kill -9 {}'.format(id))
     
+    print("all background process is killed!")
+
     net.stop()
 
 
