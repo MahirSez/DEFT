@@ -1,5 +1,5 @@
 
-# FT-Net: Fault-tolerant and Elastic Stateful Virtual Network Functions
+# FT-Net
 
 
 FT-Net is a fault-tolerant and elastic state sharing system in software defined networks(SDN)
