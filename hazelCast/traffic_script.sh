@@ -8,7 +8,7 @@ if [ $cmd == 'start' ]
 then 
 	# cmd="$(echo 'overload' | netcat -q 1 $ctrl_ip $ctrl_port)"
 	# echo $cmd
-	tcpreplay -i h5-eth0 -p 500 capture.pcap
+	tcpreplay -i h5-eth0 -p 50 -L 5000 capture.pcap
 	# ping -c 10 10.0.0.2
 fi
 

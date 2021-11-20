@@ -51,16 +51,16 @@ class SingleRouterTopo(Topo):
 
 def setup(net):
 	net['h1'].cmd("xterm -hold -e 'redis-server --protected-mode no' &")
-	# net['h1'].cmd("redis-cli flushall")
+	net['h1'].cmd("redis-cli flushall")
 
 	for i in range(1, 2):
 		net['h%s'%i].cmd("xterm -hold -e 'bash hazelcast-4.2.2/bin/start.sh' &")
 
-	for i in range(1, 2):
+	for i in range(1, 4):
 		net['h%s'%i].cmd("xterm -hold -e 'source nf_script.sh %s' &" %i)
 
-	# for i in range(1, 2):
-	# 	net['h%s'%i].cmd("xterm -hold -e 'bash host_script.sh %s' &" %i)
+	for i in range(1, 4):
+		net['h%s'%i].cmd("xterm -hold -e 'bash server_listener.sh %s' &" %i)
 
 
 

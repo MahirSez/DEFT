@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.Executors;
@@ -12,22 +11,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 
-public class ServerListener implements Runnable{
+public class ClientListener implements Runnable{
     ServerSocket serverSocket;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    protected static Logger log = LoggerFactory.getLogger(ServerListener.class.getSimpleName());
+    protected static Logger log = LoggerFactory.getLogger(ClientListener.class.getSimpleName());
     private FTManager ftManager;
 
-    ServerListener(FTManager ftManager) {
+    ClientListener(FTManager ftManager) {
         try {
             serverSocket = new ServerSocket(6666);
             this.ftManager = ftManager;
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-    }
-    private void read(Socket socket) {
 
     }
 
@@ -49,7 +45,7 @@ public class ServerListener implements Runnable{
             log.info("Starting to listen for incoming connections");
             while(true) {
                 Socket socket = this.serverSocket.accept();
-                scheduler.schedule(new CommandHandler(socket, ftManager), 0, TimeUnit.SECONDS);
+                scheduler.schedule(new CommandHandler(ftManager, socket), 0, TimeUnit.SECONDS);
             }
         } catch (IOException e) {
             e.printStackTrace();

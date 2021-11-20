@@ -33,8 +33,6 @@ nc $KEEP -l $LISTEN_IP $LISTEN_PORT | while read COMMAND; do
     NUMPKTS=${TOKENS[3]}
 
 
-    echo "here2"
-
 
     if [[ $ACTION == "start" ]]; then
     	if [[ $NUMPKTS == -1 && $RATE == -1 ]]; then

@@ -21,13 +21,16 @@ import java.util.ArrayList;
 
 public class CommandHandler implements Runnable {
 
-    private final String HELLO = "hello";
     private final String READY = "ready";
     private final String START = "start";
-    private final String OVERLOAD = "overload";
+    private final String PKT_CNT = "packet_count";
     private final String TERMINATE = "terminate";
-    private static final short DEFAULT_PRIORITY = 1000;
-    private static final short TIMEOUT_PERMANENT = 0;
+
+    private final short DEFAULT_PRIORITY = 1000;
+    private final short TIMEOUT_PERMANENT = 0;
+    private final int OVERLOAD_CNT = 5000;
+
+    private static boolean overload = false;
 
 
     private final Socket socket;
@@ -35,7 +38,7 @@ public class CommandHandler implements Runnable {
     private final FTManager ftManager;
     private final String ipAddr;
 
-    CommandHandler(Socket socket, FTManager ftManager) {
+    CommandHandler(FTManager ftManager, Socket socket) {
         this.ftManager = ftManager;
         this.socket = socket;
         this.ipAddr = ((InetSocketAddress) this.socket.getRemoteSocketAddress()).getAddress().getHostAddress();
@@ -97,7 +100,6 @@ public class CommandHandler implements Runnable {
             PrintWriter out = new PrintWriter(this.socket.getOutputStream());
             out.println(cmd);
             out.flush();
-            socket.close();
         }
         catch (IOException e) {
             log.error("Error occurred while sending command");
@@ -106,17 +108,20 @@ public class CommandHandler implements Runnable {
 
     private void handle(String output) {
         log.debug(ipAddr + " said: " + output);
-        switch (output) {
-            case HELLO:
-                ftManager.addHost(ipAddr);
-                break;
+        String[] tokens = output.split("\\s+");
+        if(tokens.length == 0) return;
+
+        switch (tokens[0]) {
             case READY:
                 addFlow(5, 1);
                 send(START);
                 break;
-            case OVERLOAD:
-                addFlow(5, 2);
-                delFlow(5, 1);
+            case PKT_CNT:
+                if(tokens.length == 3 && Integer.parseInt(tokens[2]) > OVERLOAD_CNT) {
+                    log.debug("Overload condition reached. Changing flow");
+                    addFlow(5, 2);
+                    delFlow(5, 1);
+                }
                 break;
             case TERMINATE:
                 delFlow(5, 2);
@@ -125,22 +130,6 @@ public class CommandHandler implements Runnable {
 
     }
 
-    private void serve() {
-        try {
-            log.debug("reading from socket");
-            byte[] buffer = new byte[1024];
-            int read;
-            InputStream is = socket.getInputStream();
-            while((read = is.read(buffer)) != -1) {
-                String output = new String(buffer, 0, read);
-                handle(output.replaceAll("\\s+",""));
-            }
-            socket.close();
-        }
-        catch (IOException e) {
-            log.error("Error occurred while sending command");
-        }
-    }
 
     /**
      * When an object implementing interface <code>Runnable</code> is used
@@ -155,7 +144,20 @@ public class CommandHandler implements Runnable {
      */
     @Override
     public void run() {
-        serve();
+        try {
+            log.debug("reading from socket");
+            byte[] buffer = new byte[1024];
+            int read;
+            InputStream is = socket.getInputStream();
+            while((read = is.read(buffer)) != -1) {
+                String output = new String(buffer, 0, read);
+                handle(output);
+            }
+            socket.close();
+        }
+        catch (IOException e) {
+            log.error("Error occurred while sending command");
+        }
     }
 
 }

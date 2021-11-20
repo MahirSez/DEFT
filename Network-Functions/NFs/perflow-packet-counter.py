@@ -11,11 +11,13 @@ from scapy.layers.inet import IP, TCP
 
 import sniffer
 
+REDIS_SERVER_ADDR = '192.168.1.1'
 host_var = None
 redis_client = None
 per_flow_packet_counter = None
 flow_queue = queue.Queue(maxsize=1000000)
 received_packets = 0
+
 
 
 def get_flow_from_pkt(pkt):
@@ -40,7 +42,7 @@ def process_a_pkt(pkt):
     global received_packets
 
     received_packets += 1
-    redis_client.incr(host_var)
+    redis_client.incr("packet_count " +host_var)
     flow = get_flow_from_pkt(pkt)
     logging.info("Putting flow {} into queue".format(flow))
     # logging.debug("received packets {}".format(received_packets))
@@ -101,9 +103,9 @@ def main(
 
     logging.info("Using Filter " + filter + " on interface " + interface)
     logging.info("Connecting to Redis Server")
-    redis_client = redis.Redis(host='192.168.1.1', port=6379, db=0)
+    redis_client = redis.Redis(host=REDIS_SERVER_ADDR, port=6379, db=0)
     set_host_var()
-    redis_client.set(host_var, 0)
+    redis_client.set("packet_count " + host_var, 0)
 
 
 

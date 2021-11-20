@@ -1,7 +1,6 @@
 package com.ftnet;
 
 import net.floodlightcontroller.core.IFloodlightProviderService;
-import net.floodlightcontroller.core.IOFMessageListener;
 import net.floodlightcontroller.core.IOFSwitch;
 import net.floodlightcontroller.core.module.FloodlightModuleContext;
 import net.floodlightcontroller.core.module.FloodlightModuleException;
@@ -11,9 +10,7 @@ import org.openflow.protocol.OFType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -22,10 +19,13 @@ public class FTManager implements IFloodlightModule {
 
     protected static Logger log = LoggerFactory.getLogger(FTManager.class.getSimpleName());
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private ArrayList<String> connectedHosts;
+//    private HashMap<String, Socket>connectedHosts;
+
     private IOFSwitch iofSwitch;
     private IFloodlightProviderService floodlightProvider;
     OFListener ofListener;
-    private ArrayList<String> connectedHosts;
+
 
     /**
      * Return the list of interfaces that this module implements.
@@ -84,18 +84,17 @@ public class FTManager implements IFloodlightModule {
         connectedHosts = new ArrayList<>();
     }
 
-    void startListening() {
-        scheduler.schedule(new ServerListener(this),2, TimeUnit.SECONDS);
-    }
-    void startSending() {
-        scheduler.schedule(new HostCommand(this),2, TimeUnit.SECONDS);
-    }
     void addHost(String ipAddr) {
         if(!connectedHosts.contains(ipAddr)) {
             log.info("Adding new host " + ipAddr);
-            connectedHosts.add(ipAddr);
+            this.connectedHosts.add(ipAddr);
             log.info("Current hosts: " + connectedHosts);
         }
+    }
+
+
+    ArrayList<String> getHosts() {
+        return this.connectedHosts;
     }
 
     void setSwitch(IOFSwitch sw) {
@@ -103,6 +102,14 @@ public class FTManager implements IFloodlightModule {
         this.iofSwitch = sw;
     }
     IOFSwitch getSwitch() { return this.iofSwitch; }
+
+    void startMonitoring() {
+        scheduler.schedule(new HostMonitor(this),2, TimeUnit.SECONDS);
+    }
+    void startListening() {
+        scheduler.schedule(new ClientListener(this),2, TimeUnit.SECONDS);
+    }
+
 
     /**
      * This is a hook for each module to do its <em>external</em> initializations,
@@ -115,7 +122,12 @@ public class FTManager implements IFloodlightModule {
      */
     @Override
     public void startUp(FloodlightModuleContext context) {
-        startSending();
+
+        this.addHost("192.168.1.1");
+        this.addHost("192.168.1.2");
+        this.addHost("192.168.1.3");
+
+        startMonitoring();
         startListening();
         floodlightProvider.addOFMessageListener(OFType.PACKET_IN, ofListener);
         floodlightProvider.addOFSwitchListener(ofListener);
