@@ -1,7 +1,3 @@
-
-# State Sharing with HazelCast
-
-
 ### Setup - 1: No scaling + No migration + Only state update
 ---------------------------------------------------------
 
@@ -9,29 +5,12 @@
 
 - 4 mininet hosts -> 3 will participate in consensus
 
-
-1. Each host in mininet will be have a single NF running inside it. 
-2. Each host in mininet will have a listener that comes with the NF. This listener will listen for incoming packets
-3. Each host will be a part of hazelCast cluster and act as an instance participating in the consensus.
-
-4. A client will send a packet to a host in the mininet.
-5. Upon receiving, the host will process the packet via its NF and calculate the states to be stored in the cluster
-6. Upon calculating a state / a batch of state / after every x time unit -> 
-	a host will run the hazelCast client script to update the distributed data inside the cluster
-
-7. If the host updates a batch of state / after every x time unit ->
-	Have to store the intermediate states "somewhere" (??)
-
-
-
-Q1. What NF to chooose -> Will start with a packet counter. Then firewall/prads etc.
-Q2. What state to store -> `packet_count` for packet count counter. Other states depend on the NF
-* But an already built NF would be better ig. because otherwise would have to implement packet listener :(
-
-
-* Will continue to parse Prads.log and calculate state ->
-	i. A script will continue to poll on prads.log
-	ii. whenever a new update appears insert it in the cluster
+1. Controller: Floodlight
+2. Mininet topology: 4 hosts, 1 switch. All the hosts are directly connected to the switch.
+3. 3 Mininet hosts form a cluster: host-1, host-2, and host-3.  These hosts participate in the consensus protocol.
+4. Prads runs on host-1 and listens for incoming packets.
+5. We have a .pcap file consisting of 25,000 packets. host-4 starts replaying those packets to host-1.
+6. Upon receiving each packet, prads logs anomaly-related data to a log file. Whenever prads logs any data, host-1 updates the "counter" variable and informs other cluster instances (The consensus part is handled entirely by HazelCast).
 
 
 
@@ -49,28 +28,6 @@ Q2. What state to store -> `packet_count` for packet count counter. Other states
 * API documentation -->  https://hazelcast.readthedocs.io/en/stable/client.html#hazelcast.client.HazelcastClient
 
 * Starting a cluster --> https://hazelcast.org/imdg/get-started/
-
-
-
-### Todos
-----------
-
-
-1. Run floodlight -> OK
-2. Run mininet -> make 4 hosts, single topology -> OK
-3. Make 1 hosts form a cluster -> OK
-
-4. Test with tcpdump
-	4.1. Pipe tcpdump output to a file -> OK
-	4.2. Poll on the output file, when a new line appears, run the client code > OK
-
-5. Prads -> check how to use -> OK
-6. Replace tcpdump with prads -> OK
-
-7. pcap -> check how to use -> OK
-8. Use pcap to broadcast / replay packets -> Ok
-
-9. Merge pcap + prads + hazelCast -> OK
 
 
 

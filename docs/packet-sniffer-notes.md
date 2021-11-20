@@ -34,3 +34,18 @@ mininet> h2 ping -c <count> -i <interval> h2
 ------------------------
 1. Scapy Documentation - [Docs](https://scapy.readthedocs.io/en/latest/)
 2. Packet sniffer with Scapy - [Here](https://www.geeksforgeeks.org/packet-sniffing-using-scapy/)
+
+
+
+## Useful Commands 
+-------------------
+
+- find out process ids running on a specific port:
+```bash
+sudo lsof -t -i:<port>
+```
+- now killing the process:
+```
+sudo kill -9 <pid>
+```
+
