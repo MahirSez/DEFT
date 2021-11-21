@@ -5,7 +5,6 @@ import typer
 import redis
 import socket
 
-
 import hazelcast
 from scapy.layers.inet import IP, TCP
 
@@ -17,7 +16,6 @@ redis_client = None
 per_flow_packet_counter = None
 flow_queue = queue.Queue(maxsize=1000000)
 received_packets = 0
-
 
 
 def get_flow_from_pkt(pkt):
@@ -42,7 +40,7 @@ def process_a_pkt(pkt):
     global received_packets
 
     received_packets += 1
-    redis_client.incr("packet_count " +host_var)
+    redis_client.incr("packet_count " + host_var)
     flow = get_flow_from_pkt(pkt)
     logging.info("Putting flow {} into queue".format(flow))
     # logging.debug("received packets {}".format(received_packets))
@@ -79,7 +77,6 @@ def process_packet_with_hazelcast():
         per_flow_packet_counter.unlock(flow)
 
 
-
 def set_host_var():
     global host_var
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -89,17 +86,16 @@ def set_host_var():
 
 
 def main(
-        interface:  str = typer.Option(..., '--iface', '-i', help='Interface to run the sniffer on'),
-        filter:     str = typer.Option('icmp', '--filter', '-f', help='Filter on interface sniffing'),
-        ip:         str = typer.Option('', '--dip', help='destination Ip')
+        interface: str = typer.Option(..., '--iface', '-i', help='Interface to run the sniffer on'),
+        filter: str = typer.Option('icmp', '--filter', '-f', help='Filter on interface sniffing'),
+        ip: str = typer.Option('', '--dip', help='destination Ip')
 
 ):
     global redis_client
     logging.basicConfig(level=logging.INFO)
 
-    if len(ip) != 0:    #  ip provided 
+    if len(ip) != 0:  # ip provided
         filter += ' and dst {}'.format(ip)
-
 
     logging.info("Using Filter " + filter + " on interface " + interface)
     logging.info("Connecting to Redis Server")
@@ -107,16 +103,12 @@ def main(
     set_host_var()
     redis_client.set("packet_count " + host_var, 0)
 
-
-
-
     load_hazelcast()
 
     hazelcast_thread = threading. \
         Thread(target=process_packet_with_hazelcast)
 
     hazelcast_thread.start()
-
 
     sniffer.sniffer({
         'filter': filter,

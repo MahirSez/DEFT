@@ -11,6 +11,7 @@ from mininet.log import setLogLevel
 
 from time import sleep
 
+
 class SingleSwitchTopo(Topo):
     "Single switch connected to n hosts."
 
@@ -36,9 +37,9 @@ def server(h):
 
 def host(net, id):
     h = net.get("h" + str(id))
-    ip = h.IP(intf=("h"+str(id)+"-eth0"))
+    ip = h.IP(intf=("h" + str(id) + "-eth0"))
     print("Opening client node h" + str(id) + " ip :{}".format(ip))
-    cmd = "xterm -hold -e 'source venv/bin/activate; python perflow-packet-counter.py -i h{}-eth0 -f icmp --dip={}' &".\
+    cmd = "xterm -hold -e 'source venv/bin/activate; python perflow-packet-counter.py -i h{}-eth0 -f icmp --dip={}' &". \
         format(id, ip)
     print(cmd)
     h.cmd(cmd)
@@ -53,13 +54,13 @@ def setUp(net):
     background_process_list.append((h1, id))
     sleep(10)
 
-    for i in range(2, 5): 
+    for i in range(2, 5):
         h = net.get("h" + str(i))
         id = host(net, i)
         background_process_list.append((h, id))
         sleep(5)
-    
-    return background_process_list 
+
+    return background_process_list
 
 
 def runTest(net):
@@ -70,7 +71,7 @@ def runTest(net):
     # h3.cmd('ping -c 100 -i 0.02 10.0.0.4 &')
     # h4.cmd('ping -c 100 -i 0.02 10.0.0.2 &')
 
-#   ping test: h2-> h3 -> h4 -> h3; exp output: h2:100, h3:300, h4:200 
+#   ping test: h2-> h3 -> h4 -> h3; exp output: h2:100, h3:300, h4:200
     background_tasks = []
     h2.cmd('ping -c 100 -i 0.02 10.0.0.3 &')
     background_tasks.append((h2, get_last_background_prcoess_id(h2)))
@@ -78,7 +79,6 @@ def runTest(net):
     background_tasks.append((h3, get_last_background_prcoess_id(h3)))
     h4.cmd('ping -c 100 -i 0.02 10.0.0.3 &')
     background_tasks.append((h4, get_last_background_prcoess_id(h4)))
-
 
     while background_tasks:
         h, id = background_tasks.pop()
@@ -97,21 +97,19 @@ def perfTest():
     print("Dumping host connections")
     dumpNodeConnections(net.hosts)
 
-
     daemons = setUp(net)
 
     runTest(net)
 
     print("Enter 9 to kill all process")
     while True:
-       inp = int(input()) 
-       if inp == 9: break
-
+        inp = int(input())
+        if inp == 9: break
 
     while daemons:
         h, id = daemons.pop()
         h.cmd('kill -9 {}'.format(id))
-    
+
     print("all background process is killed!")
 
     net.stop()
