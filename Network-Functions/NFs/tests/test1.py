@@ -13,7 +13,7 @@ from time import sleep
 
 
 class SingleSwitchTopo(Topo):
-    "Single switch connected to n hosts."
+    """Single switch connected to n hosts."""
 
     def build(self, n=2):
         switch = self.addSwitch('s1')
