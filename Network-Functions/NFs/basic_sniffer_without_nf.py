@@ -1,10 +1,10 @@
 import logging
 import queue
+import time
 import threading
 import typer
 import redis
 import socket
-import time
 
 import hazelcast
 from scapy.layers.inet import IP, TCP
@@ -17,27 +17,26 @@ redis_client = None
 per_flow_packet_counter = None
 flow_queue = queue.Queue(maxsize=1000000)
 received_packets = 0
-start_times, end_times = [], []
+times = []
 last_time = 0
 batch_size = 1000
 
 
-def get_flow_from_pkt(pkt):
-    tcp_sport, tcp_dport = None, None
-    if IP in pkt:
-        ip_src = pkt[IP].src
-        ip_dst = pkt[IP].dst
-        protocol = pkt[IP].proto
-    if TCP in pkt:
-        tcp_sport = pkt[TCP].sport
-        tcp_dport = pkt[TCP].dport
-
-    flow = (ip_src, ip_dst,
-            tcp_sport, tcp_dport,
-            protocol
-            )
-    return flow
-
+# def get_flow_from_pkt(pkt):
+#     tcp_sport, tcp_dport = None, None
+#     if IP in pkt:
+#         ip_src = pkt[IP].src
+#         ip_dst = pkt[IP].dst
+#         protocol = pkt[IP].proto
+#     if TCP in pkt:
+#         tcp_sport = pkt[TCP].sport
+#         tcp_dport = pkt[TCP].dport
+#
+#     flow = (ip_src, ip_dst,
+#             tcp_sport, tcp_dport,
+#             protocol
+#             )
+#     return flow
 
 def current_time_in_ms():
     return time.time_ns() // 1_000_000
@@ -48,13 +47,12 @@ def process_a_pkt(pkt):
     global received_packets, last_time, times
 
     if received_packets % batch_size == 0:
-        start_times.append(current_time_in_ms())
+        last_time = current_time_in_ms()
     received_packets += 1
+    if received_packets % batch_size == batch_size - 1:
+        times.append((current_time_in_ms() - last_time) / 1000)
+        print(f'for batch {round(received_packets / batch_size)} throughput: {batch_size / times[-1]} packets/s')
     # redis_client.incr("packet_count " + host_var)
-    flow = get_flow_from_pkt(pkt)
-    # logging.info("Putting flow {} into queue".format(flow))
-    # logging.debug("received packets {}".format(received_packets))
-    flow_queue.put(flow)
 
 
 def load_hazelcast():
@@ -73,27 +71,18 @@ def load_hazelcast():
     per_flow_packet_counter = client.get_map("my-distributed-map").blocking()
 
 
-def process_packet_with_hazelcast():
-    global end_times
-    processed_packets = 0
-    while True:
-        flow = flow_queue.get()
-        # logging.info("Extracting flow {} from queue".format(flow))
-        per_flow_packet_counter.lock(flow)
-
-        value = per_flow_packet_counter.get(flow)
-        per_flow_packet_counter.set(flow, 1 if value is None else value + 1)
-        # logging.info("after processing:" + str(flow) + " " + str(per_flow_packet_counter.get(flow)) + "\n")
-
-        # logging.info("received packets {}".format(received_packets))
-        processed_packets += 1
-        if processed_packets % batch_size == batch_size - 1:
-            end_times.append(current_time_in_ms())
-            current_index = len(end_times)-1
-            processing_time = (end_times[current_index] - start_times[current_index]) / 1000
-            print(f'for batch {round(processed_packets / batch_size)} '
-                  f'throughput: {batch_size / processing_time} packets/s')
-        per_flow_packet_counter.unlock(flow)
+# def process_packet_with_hazelcast():
+#     while True:
+#         flow = flow_queue.get()
+#         logging.info("Extracting flow {} from queue".format(flow))
+#         per_flow_packet_counter.lock(flow)
+#
+#         value = per_flow_packet_counter.get(flow)
+#         per_flow_packet_counter.set(flow, 1 if value is None else value + 1)
+#         logging.info("after processing:" + str(flow) + " " + str(per_flow_packet_counter.get(flow)) + "\n")
+#
+#         logging.info("received packets {}".format(received_packets))
+#         per_flow_packet_counter.unlock(flow)
 
 
 def set_host_var():
@@ -110,7 +99,7 @@ def main(
         ip: str = typer.Option('', '--dip', help='destination Ip')
 
 ):
-    global redis_client
+    global redis_client, last_time
     logging.basicConfig(level=logging.INFO)
 
     if ip != '':  # ip provided
@@ -124,17 +113,17 @@ def main(
 
     load_hazelcast()
 
-    hazelcast_thread = threading. \
-        Thread(target=process_packet_with_hazelcast)
-
-    hazelcast_thread.start()
+    # hazelcast_thread = threading. \
+    #     Thread(target=process_packet_with_hazelcast)
+    #
+    # hazelcast_thread.start()
 
     sniffer.sniffer({
         'filter': filter,
         'iface': interface,
         'prn': process_a_pkt
     })
-    hazelcast_thread.join()
+    # hazelcast_thread.join()
 
 
 if __name__ == '__main__':
