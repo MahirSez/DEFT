@@ -2,3 +2,4 @@ hazelcast-4.2.2/
 *.pcap
 venv/
 __pycache__
+/.idea/
