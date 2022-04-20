@@ -30,7 +30,7 @@ def get_last_background_prcoess_id(h):
 
 
 def server(h):
-    print("Opening Server on host 1")
+    print("Opening Server")
     h.cmd("xterm -hold -e 'bash ../../../../hazelcast-4.2.2/bin/start.sh' &")
     return get_last_background_prcoess_id(h)
 
@@ -54,9 +54,14 @@ def setUp(net):
     h1 = net.get('h1')
     id = server(h1)
     background_process_list.append((h1, id))
+
+    h2 = net.get('h2')
+    id = server(h2)
+    background_process_list.append((h2, id))
+
     sleep(10)
 
-    for i in range(2, 5):
+    for i in range(1, 3):
         h = net.get("h" + str(i))
         id = host(net, i)
         background_process_list.append((h, id))
@@ -66,24 +71,19 @@ def setUp(net):
 
 
 def runTest(net):
-    h2, h3, h4 = net.get('h2', 'h3', 'h4')
+    h1, h2 = net.get('h1', 'h2')
 
-#   cyclic ping: h2-> h3 -> h4 -> h2; exp output: all count 200
-    # h2.cmd('ping -c 100 -i 0.02 10.0.0.3 &')
-    # h3.cmd('ping -c 100 -i 0.02 10.0.0.4 &')
-    # h4.cmd('ping -c 100 -i 0.02 10.0.0.2 &')
-
-#   ping test: h2-> h3 -> h4 -> h3; exp output: h2:100, h3:300, h4:200
     background_tasks = []
 
     print("Pinging started!")    
 
-    h2.cmd('ping -c 100 -i 0.02 10.0.0.3 &')
+    NUMBER_OF_PKTS = 1009
+
+    # 1500 bytes
+    h1.cmd('ping -c {} -s 4096 -i 0.02 10.0.0.2 &'.format(NUMBER_OF_PKTS))
+    background_tasks.append((h1, get_last_background_prcoess_id(h1)))
+    h2.cmd('ping -c {} -i -s 4096 0.02 10.0.0.1 &'.format(NUMBER_OF_PKTS))
     background_tasks.append((h2, get_last_background_prcoess_id(h2)))
-    h3.cmd('ping -c 100 -i 0.03 10.0.0.4 &')
-    background_tasks.append((h3, get_last_background_prcoess_id(h3)))
-    h4.cmd('ping -c 100 -i 0.02 10.0.0.3 &')
-    background_tasks.append((h4, get_last_background_prcoess_id(h4)))
 
     while background_tasks:
         h, id = background_tasks.pop()
@@ -94,7 +94,8 @@ def runTest(net):
 
 def perfTest():
     """Create network and run simple performance test"""
-    topo = SingleSwitchTopo(n=4)
+    topo = SingleSwitchTopo(n=2)
+
     net = Mininet(topo=topo,
                   host=CPULimitedHost, link=TCLink,
                   controller=RemoteController)
@@ -115,7 +116,7 @@ def perfTest():
         h, id = daemons.pop()
         h.cmd('kill -9 {}'.format(id))
 
-    print("all background process is killed!")
+    print("all background process are killed!")
 
     net.stop()
 

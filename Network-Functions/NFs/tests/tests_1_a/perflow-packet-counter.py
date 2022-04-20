@@ -3,9 +3,10 @@ import queue
 import threading
 import typer
 # import redis
-from dataclasses import dataclass
 import socket
 import time
+
+from numpy.random import exponential
 
 import hazelcast
 from scapy.layers.inet import IP, TCP
@@ -24,10 +25,10 @@ last_time = 0
 class Timestamps():
     start_times, end_times = None, None 
 
-@dataclass(frozen=True)
+# @dataclass(frozen=True)
 class Limit():
-    BATCH_SIZE = 10
-    PKTS_NEED_TO_PROCESS = 10 * BATCH_SIZE
+    BATCH_SIZE = 20
+    PKTS_NEED_TO_PROCESS = 1000
 
 
 class Statistics():
@@ -61,7 +62,7 @@ def get_flow_from_pkt(pkt):
 
 
 def get_3pc_time():
-    return 0 
+    return exponential(scale=0.3)
 
 
 def current_time_in_ms():
