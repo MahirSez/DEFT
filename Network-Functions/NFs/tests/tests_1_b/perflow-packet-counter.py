@@ -17,24 +17,32 @@ REDIS_SERVER_ADDR = '192.168.1.1'
 host_var = None
 redis_client = None
 
-
 per_flow_packet_counter = None
-pkt_queue = queue.Queue(maxsize=1000000)
-last_time = 0
+
+class Buffers():
+    input_buffer = queue.Queue(maxsize=100000)          # (pkts, pkts_id) tuples
+    output_buffer = queue.Queue(maxsize=100000)         # (pkts, pkts_id) tuples
+
+class BufferTimeMaps():
+    input_in = {}
+    input_out = {}
+    output_in = {}
+    output_out = {}
+
 
 class Timestamps():
     start_times, end_times = None, None 
 
-# @dataclass(frozen=True)
+
 class Limit():
-    BATCH_SIZE = 20
+    BATCH_SIZE = 100
     PKTS_NEED_TO_PROCESS = 1000
 
 
 class Statistics():
     processed_pkts = 0
     received_packets = 0
-    total_packet_sizes = 0
+    total_delay_time = 0
     total_three_pc_time = 0
 
 # (st_time, en_time) - processing time
@@ -65,22 +73,21 @@ def get_3pc_time():
     return exponential(scale=0.3)
 
 
-def current_time_in_ms():
+def get_current_time_in_ms():
     return time.time_ns() // 1_000_000
 
 
 def process_a_pkt(pkt):
-    global start_time, received_packets
 
     if Statistics.received_packets % Limit.BATCH_SIZE == 0 \
         and Statistics.received_packets == 0:
-        Timestamps.start_time = current_time_in_ms()
+        Timestamps.start_time = get_current_time_in_ms()
 
     Statistics.received_packets += 1
     # redis_client.incr("packet_count " + host_var)
-    flow = get_flow_from_pkt(pkt)
     
-    pkt_queue.put(pkt)
+    Buffers.input_buffer.put((pkt, Statistics.received_packets))
+    BufferTimeMaps.input_in[Statistics.received_packets] = get_current_time_in_ms()
 
 
 def load_hazelcast():
@@ -101,34 +108,46 @@ def load_hazelcast():
 
 def process_packet_with_hazelcast():
 
-    map_key = "global"
 
     while True:
-        pkt = pkt_queue.get()
+        pkt, pkt_id = Buffers.input_buffer.get()
 
         Statistics.processed_pkts += 1
-        Statistics.total_packet_sizes += len(pkt)
+        Statistics.total_delay_time += get_current_time_in_ms() - BufferTimeMaps.input_in[pkt_id]
+        
+        Buffers.output_buffer.put((pkt, pkt_id))
+        BufferTimeMaps.output_in[pkt_id] = get_current_time_in_ms()
 
-        if Statistics.processed_pkts % Limit.BATCH_SIZE == Limit.BATCH_SIZE - 1:
-            Statistics.total_three_pc_time += get_3pc_time()
-            Timestamps.end_time = (current_time_in_ms())
-
-            per_flow_packet_counter.lock(map_key)
-
-            value = per_flow_packet_counter.get(map_key)
-            per_flow_packet_counter.set(map_key, 1 if value is None else value + 1)
-            # logging.info("after processing:" + str(flow) + " " + str(per_flow_packet_counter.get(flow)) + "\n")
-
-            # logging.info("received packets {}".format(received_packets))
-            per_flow_packet_counter.unlock(map_key)
+        if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
+            empty_output_buffer()
+            per_batch_update()
 
         if Statistics.processed_pkts == Limit.PKTS_NEED_TO_PROCESS:
-            time_delta = Timestamps.end_time - Timestamps.start_time
-            process_time = time_delta / 1000.0 + Statistics.total_three_pc_time
+            # time_delta = get_current_time_in_ms() - Timestamps.start_time
+            # process_time = time_delta / 1000.0 + Statistics.total_three_pc_time
 
-            print(f'Throughput for batch-size {Limit.BATCH_SIZE} is {Statistics.total_packet_sizes/process_time} byte/s')
+            print(f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time/ Statistics.processed_pkts} ms/pkt')
             break
 
+
+def empty_output_buffer():
+
+    while not Buffers.output_buffer.empty():
+        _, pkt_id = Buffers.output_buffer.get()
+        # print(f'current pkt {pkt_id}')
+        Statistics.total_delay_time += get_current_time_in_ms() - BufferTimeMaps.output_in[pkt_id]
+
+
+
+def per_batch_update():
+    map_key = "global"
+
+    Statistics.total_three_pc_time += get_3pc_time()
+
+    per_flow_packet_counter.lock(map_key)
+    value = per_flow_packet_counter.get(map_key)
+    per_flow_packet_counter.set(map_key, 1 if value is None else value + 1)
+    per_flow_packet_counter.unlock(map_key)
 
 # def set_host_var():
 #     global host_var
