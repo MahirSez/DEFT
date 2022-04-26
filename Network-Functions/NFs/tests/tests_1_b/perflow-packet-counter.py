@@ -2,16 +2,15 @@ import logging
 import queue
 import threading
 import typer
-# import redis
-import socket
-import time
-
-from numpy.random import exponential
-
 import hazelcast
+# import redis
+import time
+from numpy.random import exponential
 from scapy.layers.inet import IP, TCP
 
 import sniffer
+from master_2pc import replicate 
+
 
 REDIS_SERVER_ADDR = '192.168.1.1'
 host_var = None
@@ -35,7 +34,7 @@ class Timestamps():
 
 
 class Limit():
-    BATCH_SIZE = 100
+    BATCH_SIZE = 10
     PKTS_NEED_TO_PROCESS = 1000
 
 
@@ -51,6 +50,9 @@ class Statistics():
 # input_buffer
 # output_buffer
 
+class State():
+    per_flow_cnt = {}
+
 
 def get_flow_from_pkt(pkt):
     tcp_sport, tcp_dport = None, None
@@ -63,10 +65,13 @@ def get_flow_from_pkt(pkt):
         tcp_dport = pkt[TCP].dport
 
     flow = (ip_src, ip_dst,
-            tcp_sport, tcp_dport,
+            # tcp_sport, tcp_dport,
             protocol
             )
     return flow
+
+def get_string_of_flow(flow):
+    return f"{flow[0]},{flow[1]},{flow[2]}"
 
 
 def get_3pc_time():
@@ -108,12 +113,15 @@ def load_hazelcast():
 
 def process_packet_with_hazelcast():
 
-
     while True:
         pkt, pkt_id = Buffers.input_buffer.get()
 
         Statistics.processed_pkts += 1
         Statistics.total_delay_time += get_current_time_in_ms() - BufferTimeMaps.input_in[pkt_id]
+
+        flow_string = get_string_of_flow(get_flow_from_pkt(pkt))
+
+        State.per_flow_cnt[flow_string] = State.per_flow_cnt.get(flow_string, 0)  + 1
         
         Buffers.output_buffer.put((pkt, pkt_id))
         BufferTimeMaps.output_in[pkt_id] = get_current_time_in_ms()
@@ -141,8 +149,12 @@ def empty_output_buffer():
 
 def per_batch_update():
     map_key = "global"
+    print("------------------------------------------------------------------------------------------------------")
+    print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
+    cur_time = get_current_time_in_ms()
+    replicate(State.per_flow_cnt)
+    Statistics.total_three_pc_time += get_current_time_in_ms() - cur_time
 
-    Statistics.total_three_pc_time += get_3pc_time()
 
     per_flow_packet_counter.lock(map_key)
     value = per_flow_packet_counter.get(map_key)
@@ -155,6 +167,10 @@ def per_batch_update():
 #     s.connect(("8.8.8.8", 80))
 #     host_var = s.getsockname()[0]
 #     s.close()
+
+
+def backup_states():
+    pass
 
 
 def main(
