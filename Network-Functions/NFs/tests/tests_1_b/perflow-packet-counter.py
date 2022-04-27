@@ -57,8 +57,7 @@ class State():
 
 def receive_a_pkt(pkt):
 
-    if Statistics.received_packets % Limit.BATCH_SIZE == 0 \
-        and Statistics.received_packets == 0:
+    if Statistics.received_packets == 0:
         Timestamps.start_time = Helpers.get_current_time_in_ms()
 
     Statistics.received_packets += 1
