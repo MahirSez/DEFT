@@ -1,22 +1,23 @@
 import logging
 import queue
 import threading
+from typing import List
 import typer
-import hazelcast
 # import redis
-import time
-from numpy.random import exponential
-from scapy.layers.inet import IP, TCP
 
-import sniffer
-from master_2pc import replicate 
+import sys
+sys.path.append('../')
+from exp_package import Flow, Hazelcast, Helpers, Sniffer
+from exp_package.Two_phase_commit.primary_2pc import Primary 
 
 
-REDIS_SERVER_ADDR = '192.168.1.1'
-host_var = None
-redis_client = None
+
+# REDIS_SERVER_ADDR = '192.168.1.1'
+# host_var = None
+# redis_client = None
 
 per_flow_packet_counter = None
+master = None
 
 class Buffers():
     input_buffer = queue.Queue(maxsize=100000)          # (pkts, pkts_id) tuples
@@ -54,84 +55,42 @@ class State():
     per_flow_cnt = {}
 
 
-def get_flow_from_pkt(pkt):
-    tcp_sport, tcp_dport = None, None
-    if IP in pkt:
-        ip_src = pkt[IP].src
-        ip_dst = pkt[IP].dst
-        protocol = pkt[IP].proto
-    if TCP in pkt:
-        tcp_sport = pkt[TCP].sport
-        tcp_dport = pkt[TCP].dport
-
-    flow = (ip_src, ip_dst,
-            # tcp_sport, tcp_dport,
-            protocol
-            )
-    return flow
-
-def get_string_of_flow(flow):
-    return f"{flow[0]},{flow[1]},{flow[2]}"
-
-
-def get_3pc_time():
-    return exponential(scale=0.3)
-
-
-def get_current_time_in_ms():
-    return time.time_ns() // 1_000_000
-
-
-def process_a_pkt(pkt):
+def receive_a_pkt(pkt):
 
     if Statistics.received_packets % Limit.BATCH_SIZE == 0 \
         and Statistics.received_packets == 0:
-        Timestamps.start_time = get_current_time_in_ms()
+        Timestamps.start_time = Helpers.get_current_time_in_ms()
 
     Statistics.received_packets += 1
     # redis_client.incr("packet_count " + host_var)
     
     Buffers.input_buffer.put((pkt, Statistics.received_packets))
-    BufferTimeMaps.input_in[Statistics.received_packets] = get_current_time_in_ms()
+    BufferTimeMaps.input_in[Statistics.received_packets] = Helpers.get_current_time_in_ms()
 
 
-def load_hazelcast():
-    # Connect to Hazelcast cluster.
-    client = hazelcast.HazelcastClient(
-        cluster_members=[
-            "10.0.0.1:5701"
-            # "192.168.1.1:5701"
-        ],
-        # data_serializable_factories={
-        #     1: factory
-        # }
-    )
-    # Get the Distributed Map from Cluster.
-    global per_flow_packet_counter
-    per_flow_packet_counter = client.get_map("my-distributed-map").blocking()
+def process_a_packet(packet, packet_id):
+    Statistics.processed_pkts += 1
+    Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
 
+    flow_string = Flow.get_string_of_flow(Flow.get_flow_from_pkt(packet))
+    State.per_flow_cnt[flow_string] = State.per_flow_cnt.get(flow_string, 0)  + 1
+    
+    Buffers.output_buffer.put((packet, packet_id))
+    BufferTimeMaps.output_in[packet_id] = Helpers.get_current_time_in_ms()
 
 def process_packet_with_hazelcast():
 
     while True:
         pkt, pkt_id = Buffers.input_buffer.get()
 
-        Statistics.processed_pkts += 1
-        Statistics.total_delay_time += get_current_time_in_ms() - BufferTimeMaps.input_in[pkt_id]
-
-        flow_string = get_string_of_flow(get_flow_from_pkt(pkt))
-
-        State.per_flow_cnt[flow_string] = State.per_flow_cnt.get(flow_string, 0)  + 1
-        
-        Buffers.output_buffer.put((pkt, pkt_id))
-        BufferTimeMaps.output_in[pkt_id] = get_current_time_in_ms()
+        process_a_packet(pkt, pkt_id)
 
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
             empty_output_buffer()
             per_batch_update()
 
         if Statistics.processed_pkts == Limit.PKTS_NEED_TO_PROCESS:
-            # time_delta = get_current_time_in_ms() - Timestamps.start_time
+            # time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
             # process_time = time_delta / 1000.0 + Statistics.total_three_pc_time
 
             print(f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time/ Statistics.processed_pkts} ms/pkt')
@@ -143,7 +102,7 @@ def empty_output_buffer():
     while not Buffers.output_buffer.empty():
         _, pkt_id = Buffers.output_buffer.get()
         # print(f'current pkt {pkt_id}')
-        Statistics.total_delay_time += get_current_time_in_ms() - BufferTimeMaps.output_in[pkt_id]
+        Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.output_in[pkt_id]
 
 
 
@@ -151,9 +110,9 @@ def per_batch_update():
     map_key = "global"
     print("------------------------------------------------------------------------------------------------------")
     print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
-    cur_time = get_current_time_in_ms()
-    replicate(State.per_flow_cnt)
-    Statistics.total_three_pc_time += get_current_time_in_ms() - cur_time
+    cur_time = Helpers.get_current_time_in_ms()
+    master.replicate(State.per_flow_cnt)
+    Statistics.total_three_pc_time += Helpers.get_current_time_in_ms() - cur_time
 
 
     per_flow_packet_counter.lock(map_key)
@@ -169,18 +128,20 @@ def per_batch_update():
 #     s.close()
 
 
-def backup_states():
-    pass
-
-
 def main(
         interface: str = typer.Option(..., '--iface', '-i', help='Interface to run the sniffer on'),
         filter: str = typer.Option('icmp', '--filter', '-f', help='Filter on interface sniffing'),
-        ip: str = typer.Option('', '--dip', help='destination Ip')
+        ip: str = typer.Option('', '--dip', help='destination Ip'),
+        backup_addresses: List[str] = typer.Option(..., '--backup', '-b', help='ip:port for backups of primary nf, multiple allowed') 
 
 ):
-    global redis_client
+    global redis_client, per_flow_packet_counter, master
     logging.basicConfig(level=logging.INFO)
+
+    addresses = ['http://' + address for address in backup_addresses]
+
+    if master is None:
+        master = Primary(addresses)
 
     if ip != '':  # ip provided
         filter += ' and dst {}'.format(ip)
@@ -191,8 +152,12 @@ def main(
     # set_host_var()
     # redis_client.set("packet_count " + host_var, 0)
 
-    load_hazelcast()
+    hazelcast_client = Hazelcast.load_hazelcast([
+            "10.0.0.1:5701"
+            # "192.168.1.1:5701"
+        ])
 
+    per_flow_packet_counter = Hazelcast.create_per_flow_packet_counter(hazelcast_client)
 
     print(f'batch {Limit.BATCH_SIZE} , pkts_needed: {Limit.PKTS_NEED_TO_PROCESS}')
 
@@ -201,10 +166,10 @@ def main(
 
     hazelcast_thread.start()
 
-    sniffer.sniffer({
+    Sniffer.sniffer({
         'filter': filter,
         'iface': interface,
-        'prn': process_a_pkt
+        'prn': receive_a_pkt
     })
 
     hazelcast_thread.join()

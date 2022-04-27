@@ -40,7 +40,8 @@ def host(net, id):
     ip = h.IP(intf=("h" + str(id) + "-eth0"))
 
     print("Opening client node h" + str(id) + " ip :{}".format(ip))
-    cmd = "xterm -hold -e 'source ../../venv/bin/activate; python perflow-packet-counter.py -i h{}-eth0 -f icmp --dip={}' &". \
+    cmd = "xterm -hold -e 'source ../../venv/bin/activate; python perflow-packet-counter.py " + \
+        "-i h{}-eth0 -f icmp --dip={} -b 10.0.0.2:8000' &". \
         format(id, ip)
 
     print(cmd)
@@ -48,13 +49,13 @@ def host(net, id):
     return get_last_background_prcoess_id(h)
 
 
-def backup(net, id):
+def backup(net, id, port=8000):
     h = net.get("h" + str(id))
     ip = h.IP(intf=("h" + str(id) + "-eth0"))
 
     print("Opening replica node h" + str(id) + " ip :{}".format(ip))
-    cmd = "xterm -hold -T replica -e 'source ../../venv/bin/activate; python slave_2pc.py' &". \
-        format(id, ip)
+    cmd = "xterm -hold -T replica -e 'source ../../venv/bin/activate; python backup.py -i {} -p {}' &". \
+        format(ip, port)
 
     print(cmd)
     h.cmd(cmd)
