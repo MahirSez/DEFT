@@ -1,0 +1,12 @@
+NumProcesses 5
+port0 55550
+host0 127.0.0.1
+port1 55551
+host1 127.0.0.1
+port2 55552
+host2 127.0.0.1
+port3 55553
+host3 127.0.0.1
+port4 55554
+host4 127.0.0.1
+procNum 0

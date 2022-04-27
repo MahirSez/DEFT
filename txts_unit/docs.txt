@@ -1,0 +1,6 @@
+
+1. sudo ovs-ofctl dump-flows s1
+2. sudo ovs-ofctl del-flows s1
+3.  ../pox/./pox.py log.level --DEBUG misc.of_tutorial
+4. sudo mn --topo single,3 --mac --controller remote --switch ovsk
+5. sudo mn --custom multi_switch_topo.py --topo multiSwitch --mac --controller remote --switch ovsk

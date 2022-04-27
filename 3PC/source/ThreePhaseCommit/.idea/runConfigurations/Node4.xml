@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Node4" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="ThreePhaseCommit" />
+    <module name="ThreePhaseCommit" />
+    <option name="PROGRAM_PARAMETERS" value="config4.txt" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

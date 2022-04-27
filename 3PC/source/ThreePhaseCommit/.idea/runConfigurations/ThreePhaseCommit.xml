@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ThreePhaseCommit" type="Multirun" singleton="false" separateTabs="false" reuseTabsWithFailures="true" startOneByOne="true" markFailedProcess="true" hideSuccessProcess="true" delayTime="0.0">
+    <runConfiguration name="Node0" type="Application" />
+    <runConfiguration name="Node4" type="Application" />
+    <runConfiguration name="Node1" type="Application" />
+    <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Reset" run_configuration_type="ShConfigurationType" />
+    </method>
+  </configuration>
+</component>
