@@ -48,15 +48,6 @@ class Statistics():
     total_three_pc_time = 0
 
 # (st_time, en_time) - processing time
-# additional 3pc time 
-
-# glob_freq = 2, batch = 5
-# [1, 2, 3, 4, 5, 6]
-# [0, 1, 0, 1, 0, 1] -> glob 
-# 
-
-# input_buffer
-# output_buffer
 
 class State():
     per_flow_cnt = {}
@@ -92,20 +83,11 @@ def process_packet_with_hazelcast():
     uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
     
     while True:
-
         pkt, pkt_id = Buffers.input_buffer.get()
 
         process_a_packet(pkt, pkt_id)
 
         pkt_num_of_cur_batch += 1
-    
-
-        """
-        [1, 2, 3, 4, 5, 6], g_u = 3, batch = 8
-        [1, 0, 1, 0, 1, 0]
-        [1, 2, 0, 1, 2, 0]
-        """
-
 
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
             pkt_num_of_cur_batch = 0
