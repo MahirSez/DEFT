@@ -36,9 +36,9 @@ class Timestamps():
 
 
 class Limit():
-    BATCH_SIZE = 10
+    BATCH_SIZE = 20
     PKTS_NEED_TO_PROCESS = 1000
-    GLOBAL_UPDATE_FREQUENCY = 1
+    GLOBAL_UPDATE_FREQUENCY = 15
 
 
 class Statistics():
@@ -46,13 +46,8 @@ class Statistics():
     received_packets = 0
     total_delay_time = 0
     total_three_pc_time = 0
-    batches_processed = 0
 
 # (st_time, en_time) - processing time
-# additional 3pc time 
-
-# input_buffer
-# output_buffer
 
 class State():
     per_flow_cnt = {}
@@ -71,6 +66,7 @@ def receive_a_pkt(pkt):
 
 
 def process_a_packet(packet, packet_id):
+
     Statistics.processed_pkts += 1
     Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
 
@@ -80,26 +76,36 @@ def process_a_packet(packet, packet_id):
     Buffers.output_buffer.put((packet, packet_id))
     BufferTimeMaps.output_in[packet_id] = Helpers.get_current_time_in_ms()
 
+
 def process_packet_with_hazelcast():
+
+    pkt_num_of_cur_batch = 0
+    uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
     
     while True:
         pkt, pkt_id = Buffers.input_buffer.get()
 
         process_a_packet(pkt, pkt_id)
 
+        pkt_num_of_cur_batch += 1
+<<<<<<< HEAD
+=======
+
+>>>>>>> f2705b063e08613ac6a970009823a190ae3ad240
+
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
+            pkt_num_of_cur_batch = 0
             empty_output_buffer()
             local_state_update()
-            Statistics.batches_processed += 1
-            if Statistics.batches_processed == Limit.GLOBAL_UPDATE_FREQUENCY:
-                global_state_update(Statistics.batches_processed)
-                Statistics.batches_processed = 0
+
+        if pkt_num_of_cur_batch  % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE: 
+            global_state_update(10)
 
         if Statistics.processed_pkts == Limit.PKTS_NEED_TO_PROCESS:
             # time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
             # process_time = time_delta / 1000.0 + Statistics.total_three_pc_time
 
-            print(f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time/ Statistics.processed_pkts} ms/pkt')
+            print(f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time / Statistics.processed_pkts} ms/pkt')
             break
 
 
@@ -159,7 +165,8 @@ def main(
     # redis_client.set("packet_count " + host_var, 0)
 
     hazelcast_client = Hazelcast.load_hazelcast([
-            "10.0.0.1:5701"
+            "10.0.0.1:5701",
+            "10.0.0.2:5701"
             # "192.168.1.1:5701"
         ])
 
