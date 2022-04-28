@@ -1,0 +1,120 @@
+1. Node0 -> primary
+2. upSet is initially [0, 1, 2, 3]
+
+
+Client
+---------
+
+1. Client always broadcasts REQUEST to all nodes
+
+
+Primary
+---------
+
+1. Primary starts with state BEGIN
+2. when primary gets REQUEST, goes to state VOTEREQ
+3. sends VOTEREQ to other nodes
+    VOTE_REQ|<primary_pid>|<reqnum>|<upSetList>
+
+
+CASE: gets REPLY_VOTE_REQ from node:
+    1. adds node to responsesToVoteREQ arrayList
+
+
+CASE: Timeout: didnt received all REPLY_VOTE_REQ-s from node:
+     1. calls timeout()
+     2. updates upSet to only nodes that replies
+     3. calls abortSelf() -> state = BEGIN
+     4. adds ABORT to log.
+     5. sends DECISION|<pid>|<reqnum>|ABORT
+     6. calls abort
+
+
+CASE: gets all YES from all upSet nodes
+    1. sends PRE_COMMIT to all upSet nodes:
+        PRE_COMMIT|<pid>|<reqnum>
+    2. calls this.commit() -> adds <song, url> to stable storage
+    3. sends client:
+        <action>|<song>|<url>
+    4. sends to nodes:
+        DECISION|<pid>|<reqnum>|COMMIT
+
+
+CASE: gets UR_SELECTED:
+    1. state: VOTEREQ -> ABORT all
+    2. state: UNCERTAIN -> send STATE_REQ to all UP nodes
+    3.
+
+CASE: gets REPLY_STATE_REQUEST
+    1. decides the fate accordingly
+
+CASE: timeout: in state WAIT_FOR_STATES
+    1. if decision was not commit/commitable -> abort ALL
+    2. else proceed to commit
+
+
+Nodes
+---------
+1. when nodes get REQUEST from client,
+    goes to state VOTEREQ
+
+CASE: gets VOTEREQ from primary,
+    1. goes to state UNCERTAIN
+    2. sends reply via send_reply_vote_req():
+        REPLY_VOTE_REQ|<pid>|<reqnum>|"YES"/"NO"
+
+CASE: Timeout: received client's REQUEST but no VOTEREQ from primary  (state == VOTEREQ)
+    1. electionProtocol()
+        a. if primary -> ABORT ALL
+        b. else -> select primary and send UR_SELECTED. Primary performs (a)
+
+CASE: Timeout: received primary's VOTEREQ but not client's REQUEST
+    1. no problem. sends REPLY_VOTE_REQ
+
+
+------------------------
+
+CASE: gets PRECOMMIT from primary:
+     1. goes to state COMMITABLE
+
+CASE: Timeout: in UNCERTAIN state:
+    1. electionProtocol()
+        a. if primary -> sends all in the UPset "STATE_REQUEST|<pid>|<reqnum>|<upset_list>" and goes to state WAIT_FOR_STATES
+        b. else ->  select primary and send UR_SELECTED. primary performs (a)
+
+---------------------------
+
+CASE: gets DECISION -> ABORT:
+    1. calls abortSelf() -> state = BEGIN
+
+CASE: gets DECISION -> COMMIT:
+    1. calls this.commit() -> adds <song, url> to stable storage
+
+CASE: Timeout: in state COMMITABLE
+    1. electionProtocol()
+        a. if primary -> send precommit then commit
+        b. else -> select primry and send UR_SELECTED. primary performs (a)
+
+
+-------------------------------------
+
+CASE: gets STATE_REQUEST:
+    1. replies with "REPLY_STATE_REQUEST|<pid>|<reqnum>|<cur_state>"
+
+
+Questions
+-----------
+2. what happens if new node joins?
+
+
+
+
+
+-------------------------------
+
+Recovery
+------------
+
+1. decides its state from log
+1. sends RECOVER|<pid>|<last_known_decision>||<upset> to everyone
+2.
