@@ -84,18 +84,23 @@ def process_a_packet(packet, packet_id):
 
 def process_packet_with_hazelcast():
 
+    pkt_num_of_cur_batch = 0
+    uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
+
     while True:
         pkt, pkt_id = Buffers.input_buffer.get()
 
         process_a_packet(pkt, pkt_id)
 
+        pkt_num_of_cur_batch += 1
+
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
+            pkt_num_of_cur_batch = 0
             empty_output_buffer()
             local_state_update()
-            Statistics.batches_processed += 1
-            if Statistics.batches_processed == Limit.GLOBAL_UPDATE_FREQUENCY:
-                global_state_update(Statistics.batches_processed)
-                Statistics.batches_processed = 0
+
+        if pkt_num_of_cur_batch  % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE: 
+            global_state_update(10)
 
         if Statistics.processed_pkts == Limit.PKTS_NEED_TO_PROCESS:
             # process is completed
