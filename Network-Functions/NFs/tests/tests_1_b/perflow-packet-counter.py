@@ -152,7 +152,8 @@ def main(
     # redis_client.set("packet_count " + host_var, 0)
 
     hazelcast_client = Hazelcast.load_hazelcast([
-            "10.0.0.1:5701"
+            "10.0.0.1:5701",
+            "10.0.0.2:5701"
             # "192.168.1.1:5701"
         ])
 
