@@ -4,6 +4,9 @@
 3.  ../pox/./pox.py log.level --DEBUG misc.multiSwitchController
 4. sudo mn --topo single,3 --mac --controller remote --switch ovsk
 5. sudo mn --custom multi_switch_topo.py --topo multiSwitch --mac --controller remote --switch ovsk
+6. source venv/bin/activate
+7. python stamperScript.py
+8. python hostScript.py
 
 
 
