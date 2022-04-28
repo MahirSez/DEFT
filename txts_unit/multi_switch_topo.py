@@ -1,23 +1,6 @@
 from mininet.topo import Topo
 
 
-# class MultiSwitchTopo(Topo):
-#
-#     def build(self, n=2):
-#         switch1 = self.addSwitch('s1')
-#
-#         for h in range(n):
-#             host = self.addHost('h%s' % (h + 1))
-#             self.addLink(host, switch1)
-#
-#         client = self.addHost('client')
-#         stamper = self.addHost('stamper')
-#
-#         self.addLink(client, switch1)
-#         self.addLink(stamper, switch1)
-
-
-
 class MultiSwitchTopo(Topo):
 
     def build(self, n=2):
