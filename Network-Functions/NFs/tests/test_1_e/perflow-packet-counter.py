@@ -63,7 +63,7 @@ def receive_a_pkt(pkt):
         Timestamps.start_time = Helpers.get_current_time_in_ms()
 
     Statistics.received_packets += 1
-    print(f'received pkts: {Statistics.received_packets}')
+    # print(f'received pkts: {Statistics.received_packets}')
     # redis_client.incr("packet_count " + host_var)
     
     if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
@@ -77,7 +77,7 @@ def process_a_packet(packet, packet_id):
 
     Statistics.processed_pkts += 1
     Statistics.total_packet_size += len(packet)
-    print(f'Processed pkts: {Statistics.processed_pkts}')
+    # print(f'Processed pkts: {Statistics.processed_pkts}')
 
     Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
 
@@ -108,7 +108,7 @@ def process_packet_with_hazelcast():
         if pkt_num_of_cur_batch  % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE: 
             global_state_update(10)
 
-        if Statistics.processed_pkts == Limit.PKTS_NEED_TO_PROCESS:
+        if Statistics.processed_pkts + Statistics.packet_dropped == Limit.PKTS_NEED_TO_PROCESS:
             # time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
             # process_time = time_delta / 1000.0 + Statistics.total_three_pc_time
             
@@ -134,8 +134,8 @@ def empty_output_buffer():
 
 def local_state_update():
     # local state update    
-    print("------------------------------------------------------------------------------------------------------")
-    print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
+    # print("------------------------------------------------------------------------------------------------------")
+    # print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
     cur_time = Helpers.get_current_time_in_ms()
     master.replicate(State.per_flow_cnt)
     Statistics.total_three_pc_time += Helpers.get_current_time_in_ms() - cur_time

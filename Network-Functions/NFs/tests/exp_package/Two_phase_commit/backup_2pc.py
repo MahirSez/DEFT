@@ -12,15 +12,15 @@ class Backup:
     server: SimpleXMLRPCServer = field(init=False)
 
     def __post_init__(self):
-        self.server = SimpleXMLRPCServer((self.ip, self.port))
+        self.server = SimpleXMLRPCServer((self.ip, self.port), logRequests=False)
 
     @staticmethod
     def update_state(state):
         with open('../data/slave_state.json', 'w') as f:
             json.dump(state, f)
         
-        print('Received state from master: ')
-        print(state)
+        # print('Received state from master: ')
+        # print(state)
         return True
 
 

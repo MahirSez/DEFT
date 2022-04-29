@@ -17,13 +17,13 @@ class Primary:
 
         multicall = xmlrpc.client.MultiCall(proxy)
 
-        print(f"replicating states on slave {slave}")
+        # print(f"replicating states on slave {slave}")
 
         multicall.update_state(states)
 
         results = multicall()
-        for result in results:
-            print(result)
+        # for result in results:
+        #     print(result)
 
 
     def replicate(self, states):
