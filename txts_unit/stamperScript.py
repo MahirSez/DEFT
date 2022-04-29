@@ -4,6 +4,8 @@ from scapy.layers.inet import IP
 per_host_stamp = {}
 
 
+CLIENT_IP = '10.0.0.1'
+
 def forward_to_sw2(pkt):
     if pkt[IP].dst not in per_host_stamp:
         per_host_stamp[pkt[IP].dst] = 0
@@ -20,6 +22,6 @@ def forward_to_sw2(pkt):
 
 if __name__ == '__main__':
     print("Stamper sniffing packets on stamper-eth0....")
-    sniff(filter='ip src host 10.0.0.1', iface="stamper-eth0", prn=forward_to_sw2)
+    sniff(filter='ip src host %s' % CLIENT_IP, iface="stamper-eth0", prn=forward_to_sw2)
 
 

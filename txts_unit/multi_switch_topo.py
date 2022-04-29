@@ -21,7 +21,7 @@ class MultiSwitchTopo(Topo):
         self.addLink(switch1, switch2)
 
 
-topos = { 'multiSwitch': ( lambda: MultiSwitchTopo() ) }
+topos = { 'multiSwitch': ( lambda x: MultiSwitchTopo(x) ) }
 
     
 #

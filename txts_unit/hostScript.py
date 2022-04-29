@@ -14,10 +14,6 @@ def forward_to_sw2(pkt):
 
 
 if __name__ == '__main__':
-    # if len(sys.argv) != 2:
-    #     print("Missing Argument: <host_name>")
-    #     exit(0)
 
-    # print("%s sniffing packets...." % sys.argv[1])
     print("host sniffing packets....")
     sniff(filter='ip src host %s' % CLIENT_IP, prn=forward_to_sw2)

@@ -83,7 +83,7 @@ def setUp(net):
         background_process_list.append((h, id))
 
 
-    sleep(30)
+    sleep(5)
 
     print("All hazlecast servers are up!")
     ## create backups (h3 -> h4), (h4->h5), (h5 -> h3) : make a chain
