@@ -128,8 +128,8 @@ def runTest(net):
         source_host = pinger1 if (i//2) % 2 == 0 else pinger2
         s_h_id = n_h+1 if (i//2) % 2 == 0 else n_h+2
         target_ip = "10.0.0.{}".format(i)
-        print('from {}:ping -c {} -s 4096 -i 0.02 {} &'.format(s_h_id,NUMBER_OF_PKTS, target_ip))
-        source_host.cmd('ping -c {} -s 4096 -i 0.02 {} &'.format(NUMBER_OF_PKTS, target_ip))
+        print('from {}:ping -c {} -s 1400 -i 0.02 {} &'.format(s_h_id,NUMBER_OF_PKTS, target_ip))
+        source_host.cmd('ping -c {} -s 1400 -i 0.02 {} &'.format(NUMBER_OF_PKTS, target_ip))
         background_tasks.append((source_host, get_last_background_prcoess_id(source_host)))
 
     while background_tasks:

@@ -2,6 +2,7 @@ import logging
 import queue
 import threading
 from typing import List
+
 import typer
 # import redis
 
@@ -39,13 +40,16 @@ class Limit():
     BATCH_SIZE = 20
     PKTS_NEED_TO_PROCESS = 1000
     GLOBAL_UPDATE_FREQUENCY = 15
+    BUFFER_LIMIT = 1 * BATCH_SIZE
 
 
 class Statistics():
     processed_pkts = 0
     received_packets = 0
+    total_packet_size = 0
     total_delay_time = 0
     total_three_pc_time = 0
+    packet_dropped = 0
 
 # (st_time, en_time) - processing time
 
@@ -59,17 +63,20 @@ def receive_a_pkt(pkt):
         Timestamps.start_time = Helpers.get_current_time_in_ms()
 
     Statistics.received_packets += 1
-    print(f'Received pkts: {Statistics.received_packets}')
+    print(f'received pkts: {Statistics.received_packets}')
     # redis_client.incr("packet_count " + host_var)
     
-    Buffers.input_buffer.put((pkt, Statistics.received_packets))
-    BufferTimeMaps.input_in[Statistics.received_packets] = Helpers.get_current_time_in_ms()
+    if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
+        Buffers.input_buffer.put((pkt, Statistics.received_packets))
+        BufferTimeMaps.input_in[Statistics.received_packets] = Helpers.get_current_time_in_ms()
+    else:
+        Statistics.packet_dropped += 1
 
 
 def process_a_packet(packet, packet_id):
 
     Statistics.processed_pkts += 1
-
+    Statistics.total_packet_size += len(packet)
     print(f'Processed pkts: {Statistics.processed_pkts}')
 
     Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
@@ -104,9 +111,18 @@ def process_packet_with_hazelcast():
         if Statistics.processed_pkts == Limit.PKTS_NEED_TO_PROCESS:
             # time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
             # process_time = time_delta / 1000.0 + Statistics.total_three_pc_time
-
-            print(f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time / Statistics.processed_pkts} ms/pkt')
+            
+            generate_statistics()
             break
+
+
+def generate_statistics():
+    time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
+    total_process_time = time_delta / 1000.0
+
+    print(f'Throughput for batch-size {Limit.BATCH_SIZE} is {Statistics.total_packet_size/ total_process_time} Byte/s')
+    print(f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time / Statistics.processed_pkts} ms/pkt')
+    print(f'packets dropped {Statistics.packet_dropped}')
 
 
 def empty_output_buffer():
