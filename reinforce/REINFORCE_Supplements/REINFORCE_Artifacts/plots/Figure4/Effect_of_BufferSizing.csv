@@ -1,0 +1,5 @@
+#Buffer size,Throughput (in MPPS),Avg. Latency (in milli seconds)
+1K,2.04,0.942
+4K,4.8,1.062
+8K,5.81,1.132
+16K,6.16,1.26

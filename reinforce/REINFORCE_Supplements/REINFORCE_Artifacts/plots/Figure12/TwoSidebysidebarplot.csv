@@ -1,0 +1,9 @@
+#Compare NFVnice with Vanilla Schedulers for all possible load combinations - Script : new.hetero.all.sh,,,,,,,,,,,,,,,,,,
+#,Throughput,,,,,,,,,Latency,,,,,,,,
+#,2,3,4,5,6,7,8,9,10,11,12,13,11,12,13,14,15,16
+#Title,Bar1firstcol,Bar1firstcol-Min,Bar1firstcol-Max,Bar1seccol,Bar1seccol-Min,Bar1seccol-Max,Bar1thirdcol,Bar1thirdcol-Min,Bar1thirdcol-Max,Bar2firstcol,Bar2firstcol-Min,Bar2firstcol-Max,Bar2seccol,Bar2seccol-Min,Bar2seccol-Max,Bar2thirdcol,Bar2thirdcol-Min,Bar2thirdcol-Max
+1 PKT,1.57,1.56,1.58,2.4,2.4,2.41,1.5,1.49,1.51,1.5,1.49,1.51,2.3,2.3,2.33,1.5,1.49,1.51
+10 PKT,2.03,2.02,2.04,2.45,2.43,2.46,2.24,2.18,2.25,2.24,2.18,2.25,2.3,2.3,2.3,2.24,2.18,2.25
+100K PKT,1.3,0.8,1.4,2.36,2.35,2.38,2.35,2.35,2.35,2.35,2.35,2.35,2.51,2.5,2.51,2.35,2.35,2.35
+1M PKT,2.41,2.39,2.42,2.41,2.41,2.41,2.41,2.39,2.42,2.41,2.39,2.42,2.43,2.42,2.44,2.41,2.39,2.42
+100M PKT,2.41,2.39,2.42,2.41,2.41,2.41,2.41,2.39,2.42,2.41,2.39,2.42,2.43,2.42,2.44,2.41,2.39,2.42
