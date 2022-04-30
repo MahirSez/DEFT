@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 from mininet.topo import Topo
 from mininet.net import Mininet
@@ -11,22 +11,51 @@ from mininet.log import setLogLevel
 
 from time import sleep
 
-import sys
 
+
+
+import sys
+sys.path.append('../')
+
+print(sys.version)
+
+from exp_package import Flow, Hazelcast, Helpers, Sniffer
+# from exp_package.Two_phase_commit.primary_2pc import Primary 
+
+import config
 
 n_h = 2
 
-
-class SingleSwitchTopo(Topo):
-    """Single switch connected to n hosts."""
+class MultiSwitchTopo(Topo):
 
     def build(self, n=2):
-        switch = self.addSwitch('s1')
+
+        switch1 = self.addSwitch('s1')
+        switch2 = self.addSwitch('s2')
         for h in range(n):
-            # Each host gets 50%/n of system CPU
-            host = self.addHost('h%s' % (h + 1),
-                                cpu=.5 / n)
-            self.addLink(host, switch)
+            host = self.addHost('h%s' % (h + 1))
+            self.addLink(host, switch2)
+
+        client = self.addHost('client')
+        stamper = self.addHost('stamper')
+
+        self.addLink(switch1, stamper)
+        self.addLink(stamper, switch2)
+        self.addLink(switch1, client)
+        self.addLink(switch1, switch2)
+
+
+
+# class SingleSwitchTopo(Topo):
+#     """Single switch connected to n hosts."""
+
+#     def build(self, n=2):
+#         switch = self.addSwitch('s1')
+#         for h in range(n):
+#             # Each host gets 50%/n of system CPU
+#             host = self.addHost('h%s' % (h + 1),
+#                                 cpu=.5 / n)
+#             self.addLink(host, switch)
 
 
 def get_last_background_prcoess_id(h):
@@ -143,34 +172,39 @@ def runTest(net):
 
 def perfTest():
     """Create network and run simple performance test"""
-    topo = SingleSwitchTopo(n = n_h + 2) 
+    topo = MultiSwitchTopo(n = 7) 
 
     net = Mininet(topo=topo,
                   host=CPULimitedHost, link=TCLink,
                   controller=RemoteController)
+
     net.start()
     print("Dumping host connections")
 
     dumpNodeConnections(net.hosts)
-    daemons = setUp(net)
 
-    runTest(net)
+
+
+
+    # daemons = setUp(net)
+
+    # runTest(net)
 
     print("Enter 9 to kill all process")
     while True:
         inp = int(input())
         if inp == 9: break
 
-    while daemons:
-        h, id = daemons.pop()
-        h.cmd('kill -9 {}'.format(id))
+    # while daemons:
+    #     h, id = daemons.pop()
+    #     h.cmd('kill -9 {}'.format(id))
 
-    print("all background process are killed!")
+    # print("all background process are killed!")
 
     net.stop()
 
 
 if __name__ == '__main__':
     setLogLevel('info')
-    print(sys.version)
+    print(config.HOSTS)
     perfTest()

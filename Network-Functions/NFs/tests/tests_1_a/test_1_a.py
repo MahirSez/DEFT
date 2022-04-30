@@ -31,7 +31,7 @@ def get_last_background_prcoess_id(h):
 
 def server(h, id):
     print("Opening Server")
-    h.cmd("xterm -T hazle_server_{} -hold -e 'bash ../../../../hazelcast-4.2.2/bin/start.sh' &".format(id))
+    h.cmd('bash ../../../../hazelcast-4.2.2/bin/start.sh &')
     return get_last_background_prcoess_id(h)
 
 

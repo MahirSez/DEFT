@@ -2,7 +2,7 @@ import logging
 import queue
 import threading
 import typer
-import redis
+# import redis
 import socket
 import time
 
@@ -19,7 +19,7 @@ flow_queue = queue.Queue(maxsize=1000000)
 received_packets = 0
 start_times, end_times = [], []
 last_time = 0
-batch_size = 1000
+batch_size = 10
 
 
 def get_flow_from_pkt(pkt):
@@ -61,7 +61,7 @@ def load_hazelcast():
     # Connect to Hazelcast cluster.
     client = hazelcast.HazelcastClient(
         cluster_members=[
-            "10.0.0.2:5701"
+            "10.0.0.1:5701"
             # "192.168.1.1:5701"
         ],
         # data_serializable_factories={
@@ -76,6 +76,9 @@ def load_hazelcast():
 def process_packet_with_hazelcast():
     global end_times
     processed_packets = 0
+
+    print("DBG: Processing pkt")
+
     while True:
         flow = flow_queue.get()
         # logging.info("Extracting flow {} from queue".format(flow))
@@ -88,6 +91,7 @@ def process_packet_with_hazelcast():
         # logging.info("received packets {}".format(received_packets))
         processed_packets += 1
         if processed_packets % batch_size == batch_size - 1:
+        # if True:
             end_times.append(current_time_in_ms())
             current_index = len(end_times)-1
             processing_time = (end_times[current_index] - start_times[current_index]) / 1000
@@ -96,12 +100,12 @@ def process_packet_with_hazelcast():
         per_flow_packet_counter.unlock(flow)
 
 
-def set_host_var():
-    global host_var
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    host_var = s.getsockname()[0]
-    s.close()
+# def set_host_var():
+#     global host_var
+#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#     s.connect(("8.8.8.8", 80))
+#     host_var = s.getsockname()[0]
+#     s.close()
 
 
 def main(
