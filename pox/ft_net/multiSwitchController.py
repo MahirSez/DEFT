@@ -118,10 +118,10 @@ class Tutorial(object):
 		srcName = "unknown" if str(packet.src) not in macToName else macToName[str(packet.src)]
 		dstName = "unknown" if str(packet.dst) not in macToName else macToName[str(packet.dst)]
 		packetType = ethtype_to_str(packet.type)
-		print(self.switchName + " : " + srcName + " --> " + dstName)
-		print(self.switchName + " : " + str(packet.src) + " --> " + str(packet.dst) + " :: " + packetType)
+		# print(self.switchName + " : " + srcName + " --> " + dstName)
+		# print(self.switchName + " : " + str(packet.src) + " --> " + str(packet.dst) + " :: " + packetType)
 
-		print(self.mac_to_port)
+		# print(self.mac_to_port)
 
 
 		# if the port associated with the destination MAC of the packet is known:
