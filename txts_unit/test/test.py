@@ -85,6 +85,9 @@ def create_backup(net, backup_name, port=8000):
     ip = config.HOST_IP[backup_name]
 
     print("Opening backup node" + backup_name + " ip :{}".format(ip))
+    # cmd = '"source ../venv/bin/activate; python backup.py -i {} -p {}" &'. \
+    #     format(ip, port)
+
     cmd = "xterm -hold -T replica-{} -e 'source ../venv/bin/activate; python backup.py -i {} -p {}' &". \
         format(backup_name, ip, port)
 
@@ -119,9 +122,17 @@ def setUp(net):
 
     background_process_list = []  # (host, pid) tuple
 
+    stamper = net.get('stamper')
+    cmd = "xterm -hold -T stamper -e 'source ../venv/bin/activate; python ../stamperScript.py' &"
+    stamper.cmd(cmd)
+    background_process_list.append((stamper, get_last_background_prcoess_id(stamper)))
+    sleep(5)
+
+    print('Stamper is Up!')
+
     background_process_list.extend(create_hazelcast_servers(net))
-    sleep(30)
-    print("All hazlecast servers are up!")
+    sleep(25)
+    print('All hazlecast servers are up!')
 
 
     for primary in config.PRIMARIES[:n_h]:
@@ -157,13 +168,13 @@ def setUp(net):
 
 def runTest(net):
 
-    pinger1, pinger2 = net.get('h'+str(n_h+1), 'h' + str(n_h+2))
+    client = net.get('client')
 
     background_tasks = []
 
-    print("Pinging started!")    
+    # print("Pinging started!")    
 
-    NUMBER_OF_PKTS = 1000
+    NUMBER_OF_PKTS = 1009
 
     # 1500 bytes
     # for i in range(3, 2 + 2*n_h+1, 2):
@@ -174,13 +185,14 @@ def runTest(net):
     #     source_host.cmd('ping -c {} -s 4096 -i 0.02 {} &'.format(NUMBER_OF_PKTS, target_ip))
     #     background_tasks.append((source_host, get_last_background_prcoess_id(source_host)))
 
-    for i in range(1, n_h+1):
-        source_host = pinger1 if (i//2) % 2 == 0 else pinger2
-        s_h_id = n_h+1 if (i//2) % 2 == 0 else n_h+2
-        target_ip = "10.0.0.{}".format(i)
-        print('from {}:ping -c {} -s 1400 -i 0.02 {} &'.format(s_h_id,NUMBER_OF_PKTS, target_ip))
-        source_host.cmd('ping -c {} -s 1400 -i 0.02 {} &'.format(NUMBER_OF_PKTS, target_ip))
-        background_tasks.append((source_host, get_last_background_prcoess_id(source_host)))
+    for target in config.PRIMARIES[:n_h]:
+        target_ip = config.HOST_IP[target]
+
+        print('from {}:ping -c {} -s 1400 -i 0.02 {} &'.\
+            format(config.HOST_IP['client'],NUMBER_OF_PKTS, target_ip))
+
+        client.cmd('ping -c {} -s 1400 -i 0.02 {} &'.format(NUMBER_OF_PKTS, target_ip))
+        background_tasks.append((client, get_last_background_prcoess_id(client)))
 
     while background_tasks:
         h, id = background_tasks.pop()
@@ -202,17 +214,10 @@ def perfTest():
 
     dumpNodeConnections(net.hosts)
 
-    stamper = net.get('stamper')
-    cmd = "xterm -hold -T stamper -e 'source ../venv/bin/activate; python ../stamperScript.py' &"
-    stamper.cmd(cmd)
-
-    sleep(5)
 
     daemons = setUp(net)
 
-
-
-    # runTest(net)
+    runTest(net)
 
     print("Enter 9 to kill all process")
     while True:
