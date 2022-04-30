@@ -20,7 +20,7 @@ sys.path.append('../')
 print(sys.version)
 
 from exp_package import Flow, Hazelcast, Helpers, Sniffer
-# from exp_package.Two_phase_commit.primary_2pc import Primary 
+from exp_package.Two_phase_commit.primary_2pc import Primary 
 
 import config
 
@@ -46,92 +46,111 @@ class MultiSwitchTopo(Topo):
 
 
 
-# class SingleSwitchTopo(Topo):
-#     """Single switch connected to n hosts."""
-
-#     def build(self, n=2):
-#         switch = self.addSwitch('s1')
-#         for h in range(n):
-#             # Each host gets 50%/n of system CPU
-#             host = self.addHost('h%s' % (h + 1),
-#                                 cpu=.5 / n)
-#             self.addLink(host, switch)
-
-
 def get_last_background_prcoess_id(h):
     id = int(h.cmd('echo $!'))
     return id
 
 
-def server(h, id):
-    print("Opening Server at {}".format(id))
-    h.cmd('bash ../../../../hazelcast-4.2.2/bin/start.sh &')
+def create_server(h, server_name):
+    print("Opening Server at {}".format(server_name))
+
+    h.cmd('bash ../../hazelcast-4.2.2/bin/start.sh &')
+
+    # h.cmd("xterm -hold -T {} -e 'bash ../../hazelcast-4.2.2/bin/start.sh &'". \
+    # format(server_name))
+
     return get_last_background_prcoess_id(h)
 
 
-def create_primary(net, primary_id, backup_id):
+def create_primary(net, primary_name, backup_name):
 
-    p_h = net.get("h" + str(primary_id))
-    b_h = net.get("h" + str(backup_id))
-    p_ip = p_h.IP(intf=("h" + str(primary_id) + "-eth0"))
-    b_ip = b_h.IP(intf=("h" + str(backup_id) + "-eth0"))
+    p_h = net.get(primary_name)
+    p_ip = config.HOST_IP[primary_name]
+    b_ip = config.HOST_IP[backup_name]
 
 
-    print("Opening primary at h-{} with backup at h-{}".format(primary_id, backup_id))
+    print("Opening primary at {} with backup at {}".format(primary_name, backup_name))
 
-    cmd = "xterm -hold -e 'source ../../venv/bin/activate; python perflow-packet-counter.py " + \
-        "-i h{}-eth0 -f icmp --dip={} -b {}:8000' &". \
-        format(primary_id, p_ip, b_ip)
+    cmd = "xterm -hold -e 'source ../venv/bin/activate; python perflow-packet-counter.py " + \
+        "-i {}-eth0 -f icmp --dip={} -b {}:8000' &". \
+        format(primary_name, p_ip, b_ip)
 
     print(cmd)
     p_h.cmd(cmd)
     return get_last_background_prcoess_id(p_h)
 
 
-def create_backup(net, id, port=8000):
-    h = net.get("h" + str(id))
-    ip = h.IP(intf=("h" + str(id) + "-eth0"))
+def create_backup(net, backup_name, port=8000):
+    h = net.get(backup_name)
+    ip = config.HOST_IP[backup_name]
 
-    print("Opening backup node h" + str(id) + " ip :{}".format(ip))
-    cmd = "xterm -hold -T replica -e 'source ../../venv/bin/activate; python backup.py -i {} -p {}' &". \
-        format(ip, port)
+    print("Opening backup node" + backup_name + " ip :{}".format(ip))
+    cmd = "xterm -hold -T replica-{} -e 'source ../venv/bin/activate; python backup.py -i {} -p {}' &". \
+        format(backup_name, ip, port)
 
     print(cmd)
     h.cmd(cmd)
     return get_last_background_prcoess_id(h)
 
 
-def setUp(net):
-
+def create_hazelcast_servers(net):
     background_process_list = []  # (host, pid) tuple
 
     ## opening hazlecast server
     ## TODO: Make sure to create a list from here
 
-    for id in range(1, n_h+1):
-        h = net.get('h{}'.format(id))
-        id = server(h, str(id))
+    servers = set()
+
+    for primary in config.PRIMARIES[:n_h]:
+        servers.add(primary)
+        servers.add(config.PRIMARY_TO_SECONDARY[primary])
+    
+    print(f'Hazle Servers are {servers}')
+    
+
+    for server_name in servers:
+        h = net.get(server_name)
+        id = create_server(h, server_name)
         background_process_list.append((h, id))
 
+    return background_process_list
 
-    sleep(5)
+def setUp(net):
 
+    background_process_list = []  # (host, pid) tuple
+
+    background_process_list.extend(create_hazelcast_servers(net))
+    sleep(30)
     print("All hazlecast servers are up!")
-    ## create backups (h3 -> h4), (h4->h5), (h5 -> h3) : make a chain
 
 
-    for p_id in range(1, n_h+1):
-        p_h = net.get("h" + str(p_id))
-        b_id = p_id + 1 if p_id + 1 <= n_h else 1  # offset one is replica
-        b_h = net.get("h" + str(b_id))
+    for primary in config.PRIMARIES[:n_h]:
 
-        process_id = create_backup(net, b_id)
+        secondary = config.PRIMARY_TO_SECONDARY[primary]
+
+        p_h = net.get(primary)
+        b_h = net.get(secondary)
+
+        process_id = create_backup(net, secondary)
         background_process_list.append((b_h, process_id))
 
-        process_id = create_primary(net, p_id, b_id)
+        process_id = create_primary(net, primary, secondary)
         background_process_list.append((p_h, process_id))
 
+
+    # for p_id in range(1, n_h+1):
+    #     p_h = net.get("h" + str(p_id))
+    #     b_id = p_id + 1 if p_id + 1 <= n_h else 1  # offset one is replica
+    #     b_h = net.get("h" + str(b_id))
+
+    #     process_id = create_backup(net, b_id)
+    #     background_process_list.append((b_h, process_id))
+
+    #     process_id = create_primary(net, p_id, b_id)
+    #     background_process_list.append((p_h, process_id))
+
     sleep(20)
+    print('Primary and backup created!')
 
     return background_process_list
 
@@ -183,10 +202,15 @@ def perfTest():
 
     dumpNodeConnections(net.hosts)
 
+    stamper = net.get('stamper')
+    cmd = "xterm -hold -T stamper -e 'source ../venv/bin/activate; python ../stamperScript.py' &"
+    stamper.cmd(cmd)
+
+    sleep(5)
+
+    daemons = setUp(net)
 
 
-
-    # daemons = setUp(net)
 
     # runTest(net)
 
@@ -195,16 +219,16 @@ def perfTest():
         inp = int(input())
         if inp == 9: break
 
-    # while daemons:
-    #     h, id = daemons.pop()
-    #     h.cmd('kill -9 {}'.format(id))
+    while daemons:
+        h, id = daemons.pop()
+        h.cmd('kill -9 {}'.format(id))
 
-    # print("all background process are killed!")
+    print("all background process are killed!")
 
     net.stop()
 
 
 if __name__ == '__main__':
     setLogLevel('info')
-    print(config.HOSTS)
+    # print(config.HOSTS)
     perfTest()

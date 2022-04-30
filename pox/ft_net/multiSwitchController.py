@@ -72,6 +72,8 @@ class Tutorial(object):
 			STAMPER_MAC: config.SWITCH_HOST_TO_PORT[self.switchName]['stamper']
 		}
 
+		print(self.mac_to_port)
+
 		log.debug("Switch ID = " + str(self.switchID))
 
 
@@ -139,7 +141,8 @@ class Tutorial(object):
 			# print("Packets from " + str(packet.src) + " to " + str(packet.dst) + " will go through port " + str(out_port))
 			msg.actions.append(of.ofp_action_output(port=out_port))
 
-			dst_name = macToName[str(packet.dst)]
+			dst_name = macToName[str(packet.dst)] if str(packet.dst) in macToName else None
+
 			if self.switchID == 2 and packet.src == CLIENT_MAC and packet.type != packet.ARP_TYPE and dst_name in config.PRIMARY_TO_SECONDARY:
 				secondary_name = config.PRIMARY_TO_SECONDARY[dst_name]
 				secondary_port = config.SWITCH_HOST_TO_PORT[self.switchName][secondary_name]

@@ -54,6 +54,10 @@ SWITCH_HOST_TO_PORT = {
 	}
 }
 
+
+PRIMARIES = ['h1', 'h2', 'h3', 'h5', 'h7']
+
+
 # secondary is chosen on node-basis....need to change later
 PRIMARY_TO_SECONDARY = {
 	'h1': 'h2',
