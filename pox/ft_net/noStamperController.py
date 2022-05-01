@@ -43,7 +43,6 @@ macToName['ff:ff:ff:ff:ff:ff'] = 'flood'
 
 
 CLIENT_MAC = EthAddr(config.HOST_MAC['client'])
-STAMPER_MAC = EthAddr(config.HOST_MAC['stamper'])
 
 
 class Tutorial(object):
@@ -68,11 +67,7 @@ class Tutorial(object):
 		# Use this table to keep track of which ethernet address is on
 		# which switch port (keys are MACs, values are ports).
 
-		self.mac_to_port = {
-			STAMPER_MAC: config.SWITCH_HOST_TO_PORT[self.switchName]['stamper']
-		}
-
-		print(self.mac_to_port)
+		self.mac_to_port = {}
 
 		log.debug("Switch ID = " + str(self.switchID))
 
@@ -115,9 +110,9 @@ class Tutorial(object):
 		self.mac_to_port[packet.src] = packet_in.in_port
 
 
-		srcName = "unknown" if str(packet.src) not in macToName else macToName[str(packet.src)]
-		dstName = "unknown" if str(packet.dst) not in macToName else macToName[str(packet.dst)]
-		packetType = ethtype_to_str(packet.type)
+		# srcName = "unknown" if str(packet.src) not in macToName else macToName[str(packet.src)]
+		# dstName = "unknown" if str(packet.dst) not in macToName else macToName[str(packet.dst)]
+		# packetType = ethtype_to_str(packet.type)
 		# print(self.switchName + " : " + srcName + " --> " + dstName)
 		# print(self.switchName + " : " + str(packet.src) + " --> " + str(packet.dst) + " :: " + packetType)
 
@@ -127,10 +122,8 @@ class Tutorial(object):
 		# if the port associated with the destination MAC of the packet is known:
 		if packet.dst in self.mac_to_port:
 
-			if self.switchID == 1 and packet.src == CLIENT_MAC and packet.type != packet.ARP_TYPE:
-				out_port = self.mac_to_port[STAMPER_MAC]
-			else:
-				out_port = self.mac_to_port[packet.dst]
+			
+			out_port = self.mac_to_port[packet.dst]
 
 			msg = of.ofp_flow_mod()
 

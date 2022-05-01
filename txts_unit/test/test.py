@@ -24,7 +24,11 @@ from exp_package.Two_phase_commit.primary_2pc import Primary
 
 import config
 
+<<<<<<< HEAD
 n_h = 1
+=======
+n_h = 5
+>>>>>>> 157aed3e7d6a9b7e17778003495233ce050ab22d
 
 class MultiSwitchTopo(Topo):
 
