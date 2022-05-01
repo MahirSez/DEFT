@@ -20,6 +20,8 @@ from exp_package.Two_phase_commit.primary_2pc import Primary
 per_flow_packet_counter = None
 master = None
 
+# lock = threading.RLock()
+
 
 class Buffers():
     input_buffer = queue.Queue(maxsize=100000)          # (pkts, pkts_id) tuples
@@ -97,7 +99,6 @@ def process_packet_with_hazelcast():
         pkt, pkt_id = Buffers.input_buffer.get()
 
         process_a_packet(pkt, pkt_id)
-
         pkt_num_of_cur_batch += 1
 
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
@@ -126,11 +127,15 @@ def generate_statistics():
 
 
 def empty_output_buffer():
+    popped_pkts = 0
+    while (not Buffers.output_buffer.empty()) and \
+        popped_pkts < Limit.BATCH_SIZE:
 
-    while not Buffers.output_buffer.empty():
         _, pkt_id = Buffers.output_buffer.get()
         # print(f'current pkt {pkt_id}')
+        popped_pkts += 1
         Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.output_in[pkt_id]
+
 
 def local_state_update():
     # local state update    
@@ -148,12 +153,6 @@ def global_state_update(batches_processed: int):
     per_flow_packet_counter.set(map_key, batches_processed if value is None else value + batches_processed)
     per_flow_packet_counter.unlock(map_key)
 
-# def set_host_var():
-#     global host_var
-#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#     s.connect(("8.8.8.8", 80))
-#     host_var = s.getsockname()[0]
-#     s.close()
 
 
 def main(

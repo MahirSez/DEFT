@@ -24,7 +24,7 @@ from exp_package.Two_phase_commit.primary_2pc import Primary
 
 import config
 
-n_h = 2
+n_h = 1
 
 class MultiSwitchTopo(Topo):
 
@@ -85,11 +85,9 @@ def create_backup(net, backup_name, port=8000):
     ip = config.HOST_IP[backup_name]
 
     print("Opening backup node" + backup_name + " ip :{}".format(ip))
-    # cmd = '"source ../venv/bin/activate; python backup.py -i {} -p {}" &'. \
-    #     format(ip, port)
-
-    cmd = "xterm -hold -T replica-{} -e 'source ../venv/bin/activate; python backup.py -i {} -p {}' &". \
+    cmd = 'xterm -hold -T replica-{} -e "source ../venv/bin/activate; python backup.py -i {} -p {}" &'. \
         format(backup_name, ip, port)
+
 
     print(cmd)
     h.cmd(cmd)
