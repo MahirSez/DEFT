@@ -2,8 +2,9 @@ import logging
 import queue
 import threading
 from typing import List
-
+from scapy.all import Raw
 import typer
+from queue import PriorityQueue
 # import redis
 
 import sys
@@ -20,7 +21,12 @@ from exp_package.Two_phase_commit.primary_2pc import Primary
 per_flow_packet_counter = None
 master = None
 
+next_expected_stamp_id = {}   # (flow_id -> pkt_cnt)
+pending_pkt_map = {}       # (flow_id -> pq of pkt cnt) 
+flow_id_stamp_id_to_pkt = {}
+
 # lock = threading.RLock()
+pkt_num_of_cur_batch = 0
 
 
 class Buffers():
@@ -44,6 +50,7 @@ class Limit():
     GLOBAL_UPDATE_FREQUENCY = 15
     BUFFER_LIMIT = 1 * BATCH_SIZE
 
+uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
 
 class Statistics():
     processed_pkts = 0
@@ -59,7 +66,11 @@ class State():
     per_flow_cnt = {}
 
 
+
 def receive_a_pkt(pkt):
+    flow_id = Flow.get_flow_from_pkt(pkt)
+    stamp_id = get_stamp_id_from_pkt(pkt)
+
 
     if Statistics.received_packets == 0:
         Timestamps.start_time = Helpers.get_current_time_in_ms()
@@ -69,52 +80,107 @@ def receive_a_pkt(pkt):
     # redis_client.incr("packet_count " + host_var)
     
     if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
-        Buffers.input_buffer.put((pkt, Statistics.received_packets))
-        BufferTimeMaps.input_in[Statistics.received_packets] = Helpers.get_current_time_in_ms()
+        Buffers.input_buffer.put(pkt)
+        BufferTimeMaps.input_in[(flow_id, stamp_id)] = Helpers.get_current_time_in_ms()
     else:
         Statistics.packet_dropped += 1
 
 
-def process_a_packet(packet, packet_id):
+def process_a_packet(pkt):
+
+    global pkt_num_of_cur_batch, uniform_global_distance
+
+    packet_id = (
+        Flow.get_flow_from_pkt(pkt),
+        get_stamp_id_from_pkt(pkt)
+    )
 
     Statistics.processed_pkts += 1
-    Statistics.total_packet_size += len(packet)
-    # print(f'Processed pkts: {Statistics.processed_pkts}')
+    Statistics.total_packet_size += len(pkt)
 
     Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
 
-    flow_string = Flow.get_string_of_flow(Flow.get_flow_from_pkt(packet))
+    flow_string = Flow.get_string_of_flow(Flow.get_flow_from_pkt(pkt))
     State.per_flow_cnt[flow_string] = State.per_flow_cnt.get(flow_string, 0)  + 1
     
-    Buffers.output_buffer.put((packet, packet_id))
+    Buffers.output_buffer.put(pkt)
     BufferTimeMaps.output_in[packet_id] = Helpers.get_current_time_in_ms()
+
+    pkt_num_of_cur_batch += 1
+
+    if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
+        pkt_num_of_cur_batch = 0
+        empty_output_buffer()
+        local_state_update()
+
+    if pkt_num_of_cur_batch  % uniform_global_distance == 0 \
+        or pkt_num_of_cur_batch == Limit.BATCH_SIZE: 
+        global_state_update(10)
+
+    if Statistics.processed_pkts + Statistics.packet_dropped == Limit.PKTS_NEED_TO_PROCESS:
+        generate_statistics()
+        exit(0)
+
+
+def get_stamp_id_from_pkt (pkt):
+    payload = bytes(pkt[Raw].payload).decode()
+    stamp_id = int(payload.split()[-1])
+    return stamp_id
+
+
+def should_process_pkt(pkt):
+    if not Raw in pkt:
+        return True
+        
+    payload = bytes(pkt[Raw].payload).decode()
+    stamp_id = int(payload.split()[-1])
+    flow_id = Flow.get_flow_from_pkt(pkt)
+
+    if flow_id not in next_expected_stamp_id:
+        next_expected_stamp_id[flow_id] = 0
+
+    if stamp_id == next_expected_stamp_id[flow_id]:
+        next_expected_stamp_id[flow_id] += 1
+        return True
+
+    return False
+
+
+def insert_in_pending_map (pkt):
+    flow_id = Flow.get_flow_from_pkt(pkt) 
+    stamp_id = get_stamp_id_from_pkt(pkt)
+
+    if flow_id not in pending_pkt_map:
+        pending_pkt_map[flow_id] = PriorityQueue()
+    
+    pending_pkt_map[flow_id].put(stamp_id)
+    flow_id_stamp_id_to_pkt[(flow_id, stamp_id)] = pkt
+
+
+def should_pop_from_pending_map (flow_id):
+    if flow_id not in pending_pkt_map:
+        return False
+    stamp_id = pending_pkt_map[flow_id].get()
+    pending_pkt_map[flow_id].put(stamp_id)
+
+    return stamp_id == next_expected_stamp_id[flow_id]
 
 
 def process_packet_with_hazelcast():
-
-    pkt_num_of_cur_batch = 0
-    uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
     
     while True:
-        pkt, pkt_id = Buffers.input_buffer.get()
+        pkt = Buffers.input_buffer.get()
 
-        process_a_packet(pkt, pkt_id)
-        pkt_num_of_cur_batch += 1
+        if not should_process_pkt(pkt):
+            insert_in_pending_map(pkt)
 
-        if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
-            pkt_num_of_cur_batch = 0
-            empty_output_buffer()
-            local_state_update()
+        process_a_packet(pkt)
+        flow_id = Flow.get_flow_from_pkt(pkt)
 
-        if pkt_num_of_cur_batch  % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE: 
-            global_state_update(10)
-
-        if Statistics.processed_pkts + Statistics.packet_dropped == Limit.PKTS_NEED_TO_PROCESS:
-            # time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
-            # process_time = time_delta / 1000.0 + Statistics.total_three_pc_time
-            
-            generate_statistics()
-            break
+        while should_pop_from_pending_map(flow_id):
+            stamp_id = pending_pkt_map[flow_id].get()
+            pkt = flow_id_stamp_id_to_pkt[(flow_id, stamp_id)]
+            process_a_packet(pkt)
 
 
 def generate_statistics():
@@ -131,7 +197,12 @@ def empty_output_buffer():
     while (not Buffers.output_buffer.empty()) and \
         popped_pkts < Limit.BATCH_SIZE:
 
-        _, pkt_id = Buffers.output_buffer.get()
+        pkt = Buffers.output_buffer.get()
+
+        pkt_id = (
+            Flow.get_flow_from_pkt(pkt),
+            get_stamp_id_from_pkt(pkt)
+        )
         # print(f'current pkt {pkt_id}')
         popped_pkts += 1
         Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.output_in[pkt_id]

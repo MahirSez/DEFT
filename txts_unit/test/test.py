@@ -176,7 +176,7 @@ def runTest(net):
 
     # print("Pinging started!")    
 
-    NUMBER_OF_PKTS = 20
+    NUMBER_OF_PKTS = 1009
 
     # 1500 bytes
     # for i in range(3, 2 + 2*n_h+1, 2):

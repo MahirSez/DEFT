@@ -44,10 +44,10 @@ def forward_to_sw2(pkt):
         pkt[Raw].add_payload(raw("ID = " + str(cnt)))
         print('................')
 
-        pl = pkt[Raw].payload
-        print(type(pl))
-
-        print("%s: %s" % (bytes(pkt[Raw].payload).decode(), cnt))
+        payload = bytes(pkt[Raw].payload).decode()
+        id = int(payload.split()[-1])
+        print(get_string_of_flow(flow_id))
+        print(id)
 
 
     per_flow_stamp[flow_id] += 1
