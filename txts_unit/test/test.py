@@ -5,6 +5,7 @@ from mininet.net import Mininet
 from mininet.node import CPULimitedHost
 from mininet.link import TCLink
 from mininet.node import RemoteController
+from mininet.cli import CLI
 
 from mininet.util import dumpNodeConnections
 from mininet.log import setLogLevel
@@ -24,24 +25,23 @@ from exp_package.Two_phase_commit.primary_2pc import Primary
 
 import config
 
-<<<<<<< HEAD
-n_h = 1
-=======
-n_h = 5
->>>>>>> 157aed3e7d6a9b7e17778003495233ce050ab22d
+n_h = 2
 
 class MultiSwitchTopo(Topo):
 
     def build(self, n=2):
 
+        mac = "00:00:00:00:00:0"
+        cnt = 1
+
         switch1 = self.addSwitch('s1')
         switch2 = self.addSwitch('s2')
         for h in range(n):
-            host = self.addHost('h%s' % (h + 1))
+            host = self.addHost('h%s' % (h + 1), mac = mac + str(h+2))
             self.addLink(host, switch2)
 
-        client = self.addHost('client')
-        stamper = self.addHost('stamper')
+        client = self.addHost('client', mac= mac + str(1))
+        stamper = self.addHost('stamper', mac= mac + str(9))
 
         self.addLink(switch1, stamper)
         self.addLink(stamper, switch2)
@@ -176,7 +176,7 @@ def runTest(net):
 
     # print("Pinging started!")    
 
-    NUMBER_OF_PKTS = 1009
+    NUMBER_OF_PKTS = 20
 
     # 1500 bytes
     # for i in range(3, 2 + 2*n_h+1, 2):
@@ -218,6 +218,8 @@ def perfTest():
 
 
     daemons = setUp(net)
+
+    # CLI( net )
 
     runTest(net)
 
