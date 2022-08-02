@@ -45,10 +45,10 @@ class Timestamps():
 
 
 class Limit():
-    BATCH_SIZE = 20
+    BATCH_SIZE = 5
     PKTS_NEED_TO_PROCESS = 1000
-    GLOBAL_UPDATE_FREQUENCY = 15
-    BUFFER_LIMIT = 1 * BATCH_SIZE
+    GLOBAL_UPDATE_FREQUENCY = 1
+    BUFFER_LIMIT = 1000
 
 uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
 
