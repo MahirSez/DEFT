@@ -132,7 +132,8 @@ def local_state_update():
     # print("------------------------------------------------------------------------------------------------------")
     print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
     cur_time = Helpers.get_current_time_in_ms()
-    # master.replicate(State.per_flow_cnt)
+    global_state = per_flow_packet_counter.get("global")
+    master.replicate(global_state)
     Statistics.total_three_pc_time += Helpers.get_current_time_in_ms() - cur_time
 
 
@@ -157,6 +158,11 @@ class EchoUDP(DatagramProtocol):
 
 
 def main():
+    global master
+    addresses = ['http://localhost:9090']
+    if master is None:
+        master = Primary(addresses)
+
     global per_flow_packet_counter
     hazelcast_client = hazelcast.HazelcastClient()
     per_flow_packet_counter = Hazelcast.create_per_flow_packet_counter(hazelcast_client)
