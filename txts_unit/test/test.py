@@ -25,7 +25,7 @@ from exp_package.Two_phase_commit.primary_2pc import Primary
 
 import config
 
-n_h = 2
+n_h = 1
 
 class MultiSwitchTopo(Topo):
 
@@ -34,17 +34,21 @@ class MultiSwitchTopo(Topo):
         mac = "00:00:00:00:00:0"
         cnt = 1
 
+        bw = 0.15
+
         switch1 = self.addSwitch('s1')
         switch2 = self.addSwitch('s2')
         for h in range(n):
             host = self.addHost('h%s' % (h + 1), mac = mac + str(h+2))
-            self.addLink(host, switch2)
+            self.addLink(host, switch2, cls=TCLink, bw=bw)
+            # self.addLink(host, switch2)
 
         client = self.addHost('client', mac= mac + str(1))
         stamper = self.addHost('stamper', mac= mac + str(9))
 
         self.addLink(switch1, stamper)
-        self.addLink(stamper, switch2)
+        self.addLink(stamper, switch2, cls=TCLink, bw=bw)
+        # self.addLink(stamper, switch2)
         self.addLink(switch1, client)
         self.addLink(switch1, switch2)
 
@@ -190,10 +194,10 @@ def runTest(net):
     for target in config.PRIMARIES[:n_h]:
         target_ip = config.HOST_IP[target]
 
-        print('from {}:ping -c {} -s 1400 -i 0.02 {} &'.\
+        print('from {}:ping -c {} -s 1400 -i 0.04 {} &'.\
             format(config.HOST_IP['client'],NUMBER_OF_PKTS, target_ip))
 
-        client.cmd('ping -c {} -s 1400 -i 0.02 {} &'.format(NUMBER_OF_PKTS, target_ip))
+        client.cmd('ping -c {} -s 1400 -i 0.04 {} &'.format(NUMBER_OF_PKTS, target_ip))
         background_tasks.append((client, get_last_background_prcoess_id(client)))
 
     while background_tasks:
@@ -208,7 +212,8 @@ def perfTest():
     topo = MultiSwitchTopo(n = 7) 
 
     net = Mininet(topo=topo,
-                  host=CPULimitedHost, link=TCLink,
+                  host=CPULimitedHost, 
+                  link=TCLink,
                   controller=RemoteController)
 
     net.start()

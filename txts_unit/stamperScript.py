@@ -42,16 +42,16 @@ def forward_to_sw2(pkt):
 
     if Raw in pkt:
         pkt[Raw].add_payload(raw("ID = " + str(cnt)))
-        print('................')
+        # print('................')
 
         payload = bytes(pkt[Raw].payload).decode()
         id = int(payload.split()[-1])
-        print(get_string_of_flow(flow_id))
-        print(id)
+        # print(get_string_of_flow(flow_id))
+        # print(id)
 
 
     per_flow_stamp[flow_id] += 1
-    sendp(pkt, iface='stamper-eth1')
+    sendp(pkt, iface='stamper-eth1', verbose=0)
 
 
 
