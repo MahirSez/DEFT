@@ -13,7 +13,7 @@ def get_flow_from_pkt(pkt) -> tuple:
         tcp_dport = pkt[TCP].dport
 
     flow = (ip_src, ip_dst,
-            # tcp_sport, tcp_dport,
+            tcp_sport, tcp_dport,
             protocol
             )
             
@@ -24,4 +24,4 @@ def get_string_of_flow(flow: tuple) -> str:
         returns a string format of flow
     """
 
-    return f"{flow[0]},{flow[1]},{flow[2]}"
+    return f"{flow[0]},{flow[1]},{flow[2]},{flow[3]},{flow[4]}"

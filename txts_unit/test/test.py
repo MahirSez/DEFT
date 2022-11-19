@@ -5,6 +5,7 @@ from mininet.net import Mininet
 from mininet.node import CPULimitedHost
 from mininet.link import TCLink
 from mininet.node import RemoteController
+from mininet.cli import CLI
 
 from mininet.util import dumpNodeConnections
 from mininet.log import setLogLevel
@@ -24,23 +25,30 @@ from exp_package.Two_phase_commit.primary_2pc import Primary
 
 import config
 
-n_h = 5
+n_h = 1
 
 class MultiSwitchTopo(Topo):
 
     def build(self, n=2):
 
+        mac = "00:00:00:00:00:0"
+        cnt = 1
+
+        bw = 0.15
+
         switch1 = self.addSwitch('s1')
         switch2 = self.addSwitch('s2')
         for h in range(n):
-            host = self.addHost('h%s' % (h + 1))
-            self.addLink(host, switch2)
+            host = self.addHost('h%s' % (h + 1), mac = mac + str(h+2))
+            self.addLink(host, switch2, cls=TCLink, bw=bw)
+            # self.addLink(host, switch2)
 
-        client = self.addHost('client')
-        stamper = self.addHost('stamper')
+        client = self.addHost('client', mac= mac + str(1))
+        stamper = self.addHost('stamper', mac= mac + str(9))
 
         self.addLink(switch1, stamper)
-        self.addLink(stamper, switch2)
+        self.addLink(stamper, switch2, cls=TCLink, bw=bw)
+        # self.addLink(stamper, switch2)
         self.addLink(switch1, client)
         self.addLink(switch1, switch2)
 
@@ -85,11 +93,9 @@ def create_backup(net, backup_name, port=8000):
     ip = config.HOST_IP[backup_name]
 
     print("Opening backup node" + backup_name + " ip :{}".format(ip))
-    # cmd = '"source ../venv/bin/activate; python backup.py -i {} -p {}" &'. \
-    #     format(ip, port)
-
-    cmd = "xterm -hold -T replica-{} -e 'source ../venv/bin/activate; python backup.py -i {} -p {}' &". \
+    cmd = 'xterm -hold -T replica-{} -e "source ../venv/bin/activate; python backup.py -i {} -p {}" &'. \
         format(backup_name, ip, port)
+
 
     print(cmd)
     h.cmd(cmd)
@@ -188,10 +194,10 @@ def runTest(net):
     for target in config.PRIMARIES[:n_h]:
         target_ip = config.HOST_IP[target]
 
-        print('from {}:ping -c {} -s 1400 -i 0.02 {} &'.\
+        print('from {}:ping -c {} -s 1400 -i 0.04 {} &'.\
             format(config.HOST_IP['client'],NUMBER_OF_PKTS, target_ip))
 
-        client.cmd('ping -c {} -s 1400 -i 0.02 {} &'.format(NUMBER_OF_PKTS, target_ip))
+        client.cmd('ping -c {} -s 1400 -i 0.04 {} &'.format(NUMBER_OF_PKTS, target_ip))
         background_tasks.append((client, get_last_background_prcoess_id(client)))
 
     while background_tasks:
@@ -206,7 +212,8 @@ def perfTest():
     topo = MultiSwitchTopo(n = 7) 
 
     net = Mininet(topo=topo,
-                  host=CPULimitedHost, link=TCLink,
+                  host=CPULimitedHost, 
+                  link=TCLink,
                   controller=RemoteController)
 
     net.start()
@@ -216,6 +223,8 @@ def perfTest():
 
 
     daemons = setUp(net)
+
+    # CLI( net )
 
     runTest(net)
 
