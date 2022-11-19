@@ -1,0 +1,28 @@
+version: "3.8"
+services:
+  hazelcast:
+    environment:
+      - HZ_CLUSTERNAME=deft-cluster
+    image: hazelcast/hazelcast:4.2.2
+    scale: 2
+
+
+  hz_client:
+    build: .
+    depends_on:
+      - hazelcast
+    scale: 2
+
+  nginx:
+    container_name: nginx
+    ports:
+      - 8080:8080/udp
+    volumes:
+      - /home/mahir/FT-Net/txts_unit/nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - hz_client
+    image: nginx
+
+
+
+
