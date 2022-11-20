@@ -1,6 +1,0 @@
-#Commit Latency = (Wait Time) ,Baseline,sd,REINFORCE,sd,FTMB,sd,PicoRep,sd
-Chain 1,13.29,0.01,11.8,0,4.16,0,4.09,0.01
-Chain 2a,6.45,0,6.35,0,3.69,0,4.1,0
-Chain 2b,12.33,0.02,11.8,0.04,3.84,0.01,4.09,0
-Chain 3,12.05,0.01,11.76,0.06,3.81,0,4.08,0.01
-#Baseline and Reinforce: First run: 11.35 and 11.76 second run, 11.6, 11.82 third run 12.05, 11.81

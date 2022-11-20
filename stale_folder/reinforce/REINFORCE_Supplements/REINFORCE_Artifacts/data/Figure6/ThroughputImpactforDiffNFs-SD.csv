@@ -1,6 +1,0 @@
- #Data,Baseline,sd,Local Replication (NF Instance),sd,Remote  Replication (Chain),sd
-Simple Forward,14.82,0.2,14.82,0.2,10.32,0.2
-Monitor,14.82,0.4,14.63,0.4,9.75,0.4
-VLAN TAG (QoS),13.85,0.4,12.65,0.4,10.18,0.4
-Load Balancer,6.74,0.2,6.4,0.2,6.06,0.2
-DPI,4.33,0.01,4.13,0.2,4.13,0.2

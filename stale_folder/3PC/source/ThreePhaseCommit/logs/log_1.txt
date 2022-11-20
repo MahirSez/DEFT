@@ -1,4 +1,0 @@
-REQUEST|0|add|song1|url1
-YES
-ABORT
-DECISION|ABORT

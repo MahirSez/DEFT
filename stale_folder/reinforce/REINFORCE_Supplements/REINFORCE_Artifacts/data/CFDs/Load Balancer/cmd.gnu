@@ -1,1 +1,0 @@
-call 'LoadBalancer.gnu' 'Load_lat_baseline_0_gnu.csv' 'Load_lat_res_lcl_0_gnu.csv' 'Load_lat_res_all_0_gnu.csv'  'Load_lat_pico_0_gnu.csv'
