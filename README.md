@@ -10,7 +10,7 @@ docker-compose up -d --build
 ```
 docke-compose logs -f <service_name>
 ```
-Service name can be `hazelcast`, `hz_client` or `nginx`
+`<service_name>` can be `hazelcast`, `hz_client` or `nginx`
 
 
 - Send packets on localhost port 8080
