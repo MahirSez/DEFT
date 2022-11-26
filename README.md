@@ -8,7 +8,7 @@ docker-compose up -d --build
 
 - To check log of a service
 ```
-docke-compose logs -f <service_name>
+docker-compose logs -f <service_name>
 ```
 `<service_name>` can be `hazelcast`, `hz_client` or `nginx`
 
