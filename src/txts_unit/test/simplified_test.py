@@ -172,7 +172,8 @@ def main():
 
     hazelcast_client = hazelcast.HazelcastClient(cluster_members=["hazelcast:5701"],
                                                  cluster_name=CLUSTER_NAME)
-    # hazelcast_client = hazelcast.HazelcastClient()
+    # hazelcast_client = hazelcast.HazelcastClient(cluster_members=["172.17.0.2:5701"],
+    #                                             cluster_name=CLUSTER_NAME)
     print("Connected!")
 
     per_flow_packet_counter = Hazelcast.create_per_flow_packet_counter(hazelcast_client)

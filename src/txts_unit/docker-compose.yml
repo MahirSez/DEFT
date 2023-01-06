@@ -4,14 +4,24 @@ services:
     environment:
       - HZ_CLUSTERNAME=deft-cluster
     image: hazelcast/hazelcast:4.2.2
-    scale: 2
-
+    scale: 1
+  
+  # ovs_docker:
+  #   build: ./ovs/
+  #   depends_on:
+  #     - hz_client
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #     - /var/lib/openvswitch:/var/lib/openvswitch
 
   hz_client:
-    build: .
+    build: ./test/
     depends_on:
       - hazelcast
-    scale: 2
+    scale: 1
+
+  stamper:
+    build: ./stamper/
 
   nginx:
     container_name: nginx
@@ -20,7 +30,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - hz_client
+      - stamper
     image: nginx
 
 

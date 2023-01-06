@@ -1,0 +1,31 @@
+1. Install Open VSwitch:
+    sudo apt-get -y install openvswitch-switch
+2. install ovs-docker if doesn't already exist
+3. Add OVS bridge
+    sudo ovs-vsctl add-br ovs-br1
+4. Show bridges:
+    sudo ovs-vsctl show
+5. Configure bridge:
+    sudo ifconfig ovs-br1 173.16.1.1 netmask 255.255.255.0 up
+6. create two docker containers:
+    docker run -it --rm  --name cont1 python:3.10.8 bash
+    docker run -it --rm --name cont2 python:3.10.8 bash
+
+7. Delete all existing Open-vSwitch  interfaces
+    sudo ovs-docker del-ports ovs-br1 cont1
+    sudo ovs-docker del-ports ovs-br1 cont2
+
+8. add containers to bridges
+    sudo ovs-docker add-port ovs-br1 eth1 cont1 --ipaddress=173.16.1.2/24
+    sudo ovs-docker add-port ovs-br1 eth1 cont2 --ipaddress=173.16.1.3/24
+
+9. install ifconfig and ping: 
+    - apt update
+    - apt install -y iputils-ping net-tools
+
+10. ping cont2 from cont1
+    - ping 173.16.1.3
+
+
+- Packet sender command:
+    packetsender --num 10 -A  127.0.0.1 8080 "hello"

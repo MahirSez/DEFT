@@ -1,0 +1,2 @@
+importlib-metadata==4.11.3
+Twisted==22.10.0
