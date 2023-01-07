@@ -14,11 +14,21 @@ services:
   #     - /var/run/docker.sock:/var/run/docker.sock
   #     - /var/lib/openvswitch:/var/lib/openvswitch
 
-  hz_client:
+  hz_client_1:
     build: ./test/
     depends_on:
       - hazelcast
     scale: 1
+    volumes:
+      - ./results:/code/results
+
+  hz_client_2:
+    build: ./test/
+    depends_on:
+      - hazelcast
+    scale: 1
+    volumes:
+      - ./results:/code/results
 
   stamper:
     build: ./stamper/

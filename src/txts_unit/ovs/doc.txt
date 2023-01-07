@@ -8,7 +8,7 @@
 5. Configure bridge:
     sudo ifconfig ovs-br1 173.16.1.1 netmask 255.255.255.0 up
 6. create two docker containers:
-    docker run -it --rm  --name cont1 python:3.10.8 bash
+    docker run -it --rm --name cont1 python:3.10.8 bash
     docker run -it --rm --name cont2 python:3.10.8 bash
 
 7. Delete all existing Open-vSwitch  interfaces

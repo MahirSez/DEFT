@@ -112,12 +112,18 @@ def process_packet_with_hazelcast():
 def generate_statistics():
     time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
     total_process_time = time_delta / 1000.0
+    throughput = Statistics.total_packet_size / total_process_time
+    latency = Statistics.total_delay_time / Statistics.processed_pkts
+    filename = f'results/experiment1.csv'
+    with open(filename, 'w') as f:
+        f.write('Latency, Throughput, Packets Dropped')
+        f.write(f'{latency},{throughput},{Statistics.packet_dropped}')
 
-    print(f'Total Time {total_process_time}')
-    print(f'Throughput for batch-size {Limit.BATCH_SIZE} is {Statistics.total_packet_size / total_process_time} Byte/s')
-    print(
-        f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time / Statistics.processed_pkts} ms/pkt')
-    print(f'packets dropped {Statistics.packet_dropped}')
+    # print(f'Total Time {total_process_time}')
+    # print(f'Throughput for batch-size {Limit.BATCH_SIZE} is {Statistics.total_packet_size / total_process_time} Byte/s')
+    # print(
+    #     f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time / Statistics.processed_pkts} ms/pkt')
+    # print(f'packets dropped {Statistics.packet_dropped}')
 
 
 def empty_output_buffer():

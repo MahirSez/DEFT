@@ -5,7 +5,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 RUN apt update
-RUN apt install -y iputils-ping
+RUN apt install -y iputils-ping netcat net-tools
 RUN apt install -y inetutils-traceroute
 RUN apt install -y iproute2
 RUN apt install -y curl telnet dnsutils
