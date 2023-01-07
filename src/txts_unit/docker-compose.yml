@@ -4,7 +4,7 @@ services:
     environment:
       - HZ_CLUSTERNAME=deft-cluster
     image: hazelcast/hazelcast:4.2.2
-    scale: 1
+    scale: ${HZ_CLUSTER_CNT}
 
   hz_client:
     build:
@@ -18,6 +18,7 @@ services:
     build:
         context: .
         dockerfile: stamper.Dockerfile
+    scale: ${STAMPER_CNT}
 
   nginx:
     container_name: nginx
