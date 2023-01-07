@@ -11,7 +11,7 @@ docker-compose up -d --build
 sudo chmod +x net_setup.sh
 ```
 
-- Add the openVSwitch network
+- Add the Open vSwitch network
 ```
 ./net_setup.sh
 ```
