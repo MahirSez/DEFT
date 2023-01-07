@@ -12,6 +12,8 @@ services:
       dockerfile: hz_client.Dockerfile
     depends_on:
       - hazelcast
+    volumes:
+      - ./results:/code/results
     scale: ${HZ_CLIENT_CNT}
 
   stamper:
