@@ -7,7 +7,6 @@ from twisted.internet.protocol import Factory, Protocol, DatagramProtocol
 import sys
 
 sys.path.append('..')
-print(sys.version)
 from exp_package import  Hazelcast, Helpers
 from exp_package.Two_phase_commit.primary_2pc import Primary
 
@@ -36,7 +35,7 @@ class Timestamps:
 class Limit:
     BATCH_SIZE = 20
     PKTS_NEED_TO_PROCESS = 1000
-    GLOBAL_UPDATE_FREQUENCY = 15
+    GLOBAL_UPDATE_FREQUENCY = 1
     BUFFER_LIMIT = 1 * BATCH_SIZE
 
 
@@ -76,9 +75,6 @@ def process_a_packet(packet, packet_id):
     print(f'Processed pkts: {Statistics.processed_pkts}')
 
     Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
-
-    # flow_string = Flow.get_string_of_flow(Flow.get_flow_from_pkt(packet))
-    # State.per_flow_cnt[flow_string] = State.per_flow_cnt.get(flow_string, 0) + 1
 
     Buffers.output_buffer.put((packet, packet_id))
     BufferTimeMaps.output_in[packet_id] = Helpers.get_current_time_in_ms()
@@ -121,14 +117,8 @@ def generate_statistics():
 
     filename = f'results/experiment1_{ip_address}.csv'
     with open(filename, 'w') as f:
-        f.write('Latency, Throughput, Packets Dropped\n')
+        f.write('Latency(ms), Throughput(byte/s), Packets Dropped\n')
         f.write(f'{latency},{throughput},{Statistics.packet_dropped}')
-
-    # print(f'Total Time {total_process_time}')
-    # print(f'Throughput for batch-size {Limit.BATCH_SIZE} is {Statistics.total_packet_size / total_process_time} Byte/s')
-    # print(
-    #     f'Latency for batch-size {Limit.BATCH_SIZE} is {Statistics.total_delay_time / Statistics.processed_pkts} ms/pkt')
-    # print(f'packets dropped {Statistics.packet_dropped}')
 
 
 def empty_output_buffer():
