@@ -5,6 +5,12 @@ from queue import PriorityQueue
 from twisted.internet import reactor
 from twisted.internet.protocol import Factory, Protocol, DatagramProtocol
 import sys
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 
 sys.path.append('..')
 from exp_package import  Hazelcast, Helpers
@@ -33,7 +39,7 @@ class Timestamps:
 
 
 class Limit:
-    BATCH_SIZE = 20
+    BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
     PKTS_NEED_TO_PROCESS = 1000
     GLOBAL_UPDATE_FREQUENCY = 1
     BUFFER_LIMIT = 1 * BATCH_SIZE
@@ -113,11 +119,15 @@ def generate_statistics():
     throughput = Statistics.total_packet_size / total_process_time
     latency = Statistics.total_delay_time / Statistics.processed_pkts
 
-    ip_address = socket.gethostbyname(socket.gethostname())
 
-    filename = f'results/experiment1_{ip_address}.csv'
+    batch_size = int(os.getenv('BATCH_SIZE'))
+    buffer_size = int(os.getenv('BUFFER_SIZE'))
+    packet_rate = int(os.getenv('PACKET_RATE'))
+    
+    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}.csv'
+
     with open(filename, 'w') as f:
-        f.write('Latency(ms), Throughput(byte/s), Packets Dropped\n')
+        # f.write('Latency(ms), Throughput(byte/s), Packets Dropped\n')
         f.write(f'{latency},{throughput},{Statistics.packet_dropped}')
 
 
@@ -168,6 +178,14 @@ def main():
         master = Primary(addresses)
 
     global per_flow_packet_counter
+
+    batch_size = int(os.getenv('BATCH_SIZE'))
+    buffer_size = int(os.getenv('BUFFER_SIZE'))
+    packet_rate = int(os.getenv('PACKET_RATE'))
+    
+    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}.csv'
+
+    print(f'will open file {filename}')
 
     print(f"Trying to connect to cluster {CLUSTER_NAME}....")
 
