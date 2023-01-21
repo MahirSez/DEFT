@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-
 sys.path.append('..')
 from exp_package import  Hazelcast, Helpers
 from exp_package.Two_phase_commit.primary_2pc import Primary
@@ -65,7 +64,7 @@ def receive_a_pkt(pkt):
         Timestamps.start_time = Helpers.get_current_time_in_ms()
 
     Statistics.received_packets += 1
-    print(f'received pkts: {Statistics.received_packets}')
+    # print(f'received pkts: {Statistics.received_packets}')
     # redis_client.incr("packet_count " + host_var)
 
     if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
@@ -78,6 +77,7 @@ def receive_a_pkt(pkt):
 def process_a_packet(packet, packet_id):
     Statistics.processed_pkts += 1
     Statistics.total_packet_size += len(packet)
+    print(f'Length of packet is {len(packet)}')
     print(f'Processed pkts: {Statistics.processed_pkts}')
 
     Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
@@ -126,9 +126,9 @@ def generate_statistics():
     
     filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}.csv'
 
-    with open(filename, 'w') as f:
+    with open(filename, 'a') as f:
         # f.write('Latency(ms), Throughput(byte/s), Packets Dropped\n')
-        f.write(f'{latency},{throughput},{Statistics.packet_dropped}')
+        f.write(f'{latency},{throughput},{Statistics.packet_dropped}\n')
 
 
 def empty_output_buffer():
