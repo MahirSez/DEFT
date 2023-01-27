@@ -16,6 +16,14 @@ services:
       - ./results:/code/results
     scale: ${HZ_CLIENT_CNT}
 
+  secondary:
+    build:
+      context: .
+      dockerfile: secondary.Dockerfile
+    depends_on:
+      - hazelcast
+    scale: ${HZ_CLIENT_CNT}
+
   stamper:
     build:
         context: .

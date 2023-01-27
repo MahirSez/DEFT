@@ -19,5 +19,16 @@ do
     $command
 done
 
+
+for ((i=1;i<=HZ_CLIENT_CNT;i++)); 
+do
+    secondary_ip=${HZ_CLIENT_IP_PATTERN/$/$((i + 1 + 100))}/24
+    secondary_name=txts_unit_secondary_$i
+    command="sudo ovs-docker add-port ovs-br1 eth1 $secondary_name --ipaddress=$secondary_ip"
+    
+    echo "$command"
+    $command
+done
+
 # sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
 # sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_2 --ipaddress=173.16.1.3/24
