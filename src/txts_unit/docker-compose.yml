@@ -31,7 +31,6 @@ services:
     scale: ${STAMPER_CNT}
 
   nginx:
-    container_name: nginx
     ports:
       - 8080:8080/udp
     volumes:
