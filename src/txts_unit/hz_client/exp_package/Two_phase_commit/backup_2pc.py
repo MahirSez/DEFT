@@ -1,4 +1,3 @@
-from mimetypes import init
 from xmlrpc.server import SimpleXMLRPCServer
 from dataclasses import dataclass, field
 import json
@@ -15,11 +14,11 @@ class Backup:
 
     @staticmethod
     def update_state(state):
-        with open('../data/slave_state.json', 'w') as f:
-            json.dump(state, f)
+        # with open('../data/slave_state.json', 'w') as f:
+        #     json.dump(state, f)
         
-        # print('Received state from master: ')
-        # print(state)
+        print('Received state from master: ')
+        print(state)
         return True
 
 

@@ -15,4 +15,6 @@ COPY hz_client/ .
 COPY .env .
 
 # CMD ["nc", "-ul", "8000"]
-CMD ["python", "-u", "secondary_test.py"]
+# CMD ["python", "-u", "secondary_test.py"]
+# CMD [ "bash", "secondary_script_wrapper.sh" ]
+CMD ["python", "-u", "backup.py"]

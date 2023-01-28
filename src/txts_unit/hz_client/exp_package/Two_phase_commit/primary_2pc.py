@@ -1,15 +1,20 @@
 from typing import List
 import xmlrpc.client
-from dataclasses import dataclass, field
 
-@dataclass
+
 class Primary:
-    slaves : List[str]
-    proxies: List[xmlrpc.client.ServerProxy] = field(init=False)
+
+    def __init__(self):
+        self.slaves = []
+        self.proxies = []
+
+    # slaves : List[str] = field(init=False)
+    # proxies: List[xmlrpc.client.ServerProxy] = field(init=False)
 
 
-    def __post_init__(self):
-        self.proxies = [xmlrpc.client.ServerProxy(slave) for slave in self.slaves]
+    def add_secondary(self, secondary_ip):
+        self.slaves.append(secondary_ip)
+        self.proxies.append(xmlrpc.client.ServerProxy(secondary_ip))
 
 
     @staticmethod
