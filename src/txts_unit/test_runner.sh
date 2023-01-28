@@ -10,10 +10,12 @@ run_test() {
     echo "rate is $1"
     # sudo packetsender --udp --num "$packet_count" --rate "$1" -A 127.0.0.1 8080 "Hello World!"
     packetsender --udp --num "$packet_count" --rate "$1" -A 127.0.0.1 8080 --file packet_sender_data.txt
+    
 }
 
 # clear the previous results 
 rm -rf results/*
+mkdir -p results
 
 batchs=(10)
 buffers=(30)

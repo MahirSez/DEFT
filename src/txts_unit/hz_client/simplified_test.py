@@ -7,7 +7,9 @@ from twisted.internet.protocol import Factory, Protocol, DatagramProtocol
 import sys
 import os
 from dotenv import load_dotenv
-import netifaces as n1
+import subprocess
+from subprocess import DEVNULL, STDOUT, check_call, PIPE
+
 
 load_dotenv()
 
@@ -94,6 +96,19 @@ def process_a_packet(packet, packet_id):
     BufferTimeMaps.output_in[packet_id] = Helpers.get_current_time_in_ms()
 
 
+def can_update_local_state():
+
+    if len(master.slaves) > 0:
+        return True
+    
+    secondary_ip = create_secondary()
+    if not secondary_ip:
+        return False
+
+    print(f"New Slave added {secondary_ip}")
+    master.add_secondary(secondary_ip)
+    return True
+
 def process_packet_with_hazelcast():
     pkt_num_of_cur_batch = 0
     uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
@@ -108,7 +123,9 @@ def process_packet_with_hazelcast():
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
             pkt_num_of_cur_batch = 0
             empty_output_buffer()
-            local_state_update()
+
+            if can_update_local_state():
+                local_state_update()
 
         if pkt_num_of_cur_batch % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE:
             global_state_update(10)
@@ -177,17 +194,39 @@ class EchoUDP(DatagramProtocol):
 CLUSTER_NAME = "deft-cluster"
 LISTENING_PORT = 8000
 
+
+
+
 def get_ip_address(iface):
-    import os
-    f = os.popen(f'ifconfig {iface} | grep "inet\ addr" | cut -d: -f2 | cut -d" " -f1')
-    your_ip=f.read()
+
+    # f = os.popen(f'ifconfig {iface} | grep "inet\ addr" | cut -d: -f2 | cut -d" " -f1')
+    # f = os.popen(f'ifconfig {iface} | grep "inet"')
+    process = subprocess.Popen(f'ifconfig {iface} | grep "inet"', shell=True, stderr=PIPE, stdout=PIPE)
+    stdout, stderr = process.communicate()
+    line = stdout.decode()
+    if not line:
+        return None
+    your_ip = line.strip().split()[1]
     return your_ip
+
+
+# def get_ip_address(iface):
+#     # f = os.popen(f'ifconfig {iface} | grep "inet\ addr" | cut -d: -f2 | cut -d" " -f1')
+#     f = os.popen(f'ifconfig {iface} | grep "inet"')
+#     line = f.read()
+#     your_ip = line.strip().split()[1]
+#     return your_ip
 
 def create_secondary():
     # hostname=socket.gethostname()   
     # ip = n1.ifaddresses('eth1')[n1.AF_INET][0]['addr']
-    ip = get_ip_address('eth1')
-    print(ip)
+
+    interface = "eth1"
+    ip = get_ip_address(interface)
+    if not ip:
+        return None
+
+    print(f"IP-address of interface {interface} is {ip}")
     
     ip_segments = ip.split('.')
     ip_segments[-1] = str(int(ip_segments[-1]) + 100)
@@ -198,13 +237,13 @@ def create_secondary():
 
 def main():
     global master
-    addresses = []
+    # addresses = []
 
-    addresses.append(create_secondary())
-    print(addresses)
+    # addresses.append(create_secondary())
+    # print(addresses)
 
     if master is None:
-        master = Primary(addresses)
+        master = Primary()
 
     global per_flow_packet_counter
 
