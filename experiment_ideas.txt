@@ -1,0 +1,16 @@
+To vary:
+    1. Burst flow( Regular case vs Burst case ) Ref: S6
+    2. Buffer size
+    3. Packet size
+
+To measure:
+    1. Packets dropped 
+    2. Inreased latency with stamper
+
+Experiments:
+    1. Measure latency/throuhput over a period that includes 2PC (Ref: S6)
+    2. Same experiment for consensus
+
+Todos:
+    1. 2PC
+    2. Send duplicate Packets

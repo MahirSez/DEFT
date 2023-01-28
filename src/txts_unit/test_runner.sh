@@ -13,11 +13,11 @@ run_test() {
 }
 
 # clear the previous results 
-# rm -rf results/*
+rm -rf results/*
 
 batchs=(10)
 buffers=(30)
-pkt_rates=(100 200 500 1000)
+pkt_rates=(100)
 
 for batch_size in "${batchs[@]}"; do
     for buffer_size in "${buffers[@]}"; do
@@ -32,7 +32,7 @@ for batch_size in "${batchs[@]}"; do
             touch results/batch_"${batch_size}"-buf_"${buffer_size}"-pktrate_"${packet_rate}".csv
             echo "Latency(ms), Throughput(byte/s), Packets Dropped" >> "results/batch_${batch_size}-buf_${buffer_size}-pktrate_${packet_rate}.csv"
 
-            for trial in {1..5}; do
+            for trial in {1..1}; do
                 echo "Trial number $trial"
                 run_test "$packet_rate"
             done

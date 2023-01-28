@@ -7,6 +7,7 @@ from twisted.internet.protocol import Factory, Protocol, DatagramProtocol
 import sys
 import os
 from dotenv import load_dotenv
+import netifaces as n1
 
 load_dotenv()
 
@@ -49,11 +50,16 @@ class Statistics:
     received_packets = 0
     total_packet_size = 0
     total_delay_time = 0
-    total_three_pc_time = 0
+    total_two_pc_time = 0
     packet_dropped = 0
 
 
 # (st_time, en_time) - processing time
+
+local_state = {
+    "received_packet" : 0,
+    "processed_packet" : 0
+}
 
 class State:
     per_flow_cnt = {}
@@ -64,6 +70,7 @@ def receive_a_pkt(pkt):
         Timestamps.start_time = Helpers.get_current_time_in_ms()
 
     Statistics.received_packets += 1
+    local_state['received_packet'] += 1
     # print(f'received pkts: {Statistics.received_packets}')
     # redis_client.incr("packet_count " + host_var)
 
@@ -79,6 +86,7 @@ def process_a_packet(packet, packet_id):
     Statistics.total_packet_size += len(packet)
     print(f'Length of packet is {len(packet)}')
     print(f'Processed pkts: {Statistics.processed_pkts}')
+    local_state['processed_packet'] += 1
 
     Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
 
@@ -107,7 +115,7 @@ def process_packet_with_hazelcast():
 
         if Statistics.processed_pkts + Statistics.packet_dropped == Limit.PKTS_NEED_TO_PROCESS:
             time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
-            process_time = time_delta / 1000.0 + Statistics.total_three_pc_time
+            process_time = time_delta / 1000.0 + Statistics.total_two_pc_time
 
             generate_statistics()
             break
@@ -139,13 +147,11 @@ def empty_output_buffer():
 
 
 def local_state_update():
-    # local state update
-    # print("------------------------------------------------------------------------------------------------------")
+    global local_state
     print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
     cur_time = Helpers.get_current_time_in_ms()
-    global_state = per_flow_packet_counter.get("global")
-    master.replicate(global_state)
-    Statistics.total_three_pc_time += Helpers.get_current_time_in_ms() - cur_time
+    master.replicate(local_state)
+    Statistics.total_two_pc_time += Helpers.get_current_time_in_ms() - cur_time
 
 
 def global_state_update(batches_processed: int):
@@ -171,9 +177,32 @@ class EchoUDP(DatagramProtocol):
 CLUSTER_NAME = "deft-cluster"
 LISTENING_PORT = 8000
 
+def get_ip_address(iface):
+    import os
+    f = os.popen(f'ifconfig {iface} | grep "inet\ addr" | cut -d: -f2 | cut -d" " -f1')
+    your_ip=f.read()
+    return your_ip
+
+def create_secondary():
+    # hostname=socket.gethostname()   
+    # ip = n1.ifaddresses('eth1')[n1.AF_INET][0]['addr']
+    ip = get_ip_address('eth1')
+    print(ip)
+    
+    ip_segments = ip.split('.')
+    ip_segments[-1] = str(int(ip_segments[-1]) + 100)
+
+    secondary_address = 'http://' + '.'.join(ip_segments) + ":7000"
+
+    return secondary_address
+
 def main():
     global master
-    addresses = []  # todo: add replica
+    addresses = []
+
+    addresses.append(create_secondary())
+    print(addresses)
+
     if master is None:
         master = Primary(addresses)
 

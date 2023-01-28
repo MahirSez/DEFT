@@ -1,17 +1,18 @@
-import typer
+import socket   
 import sys
 sys.path.append('../')
 from exp_package.Two_phase_commit.backup_2pc import Backup
 
 
-def main(
-        ip: str = typer.Option(..., '--ip', '-i', help='ip address'),
-        port: str = typer.Option(..., '--port', '-p', help='port number')
-
-):
-    backup_nf = Backup(ip, int(port))
+def main():
+    # ip = 'localhost'
+    hostname=socket.gethostname()   
+    ip=socket.gethostbyname(hostname)
+    print(f"extracted ip is {ip}")
+    port = 7000
+    backup_nf = Backup(ip, port)
     backup_nf.listen()
 
 
 if __name__ == '__main__':
-    typer.run(main)
+    main()
