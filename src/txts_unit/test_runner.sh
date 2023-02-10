@@ -8,7 +8,10 @@ run_test() {
     sleep 10
     bash net_setup.sh
     echo "rate is $1"
-    # sudo packetsender --udp --num "$packet_count" --rate "$1" -A 127.0.0.1 8080 "Hello World!"
+    SERVICE_NAME=secondary
+    for id in $(docker-compose ps -q $SERVICE_NAME); do
+        docker exec -d "$id" python -u secondary_test.py
+    done;
     packetsender --udp --num "$packet_count" --rate "$1" -A 127.0.0.1 8080 --file packet_sender_data.txt
     
 }

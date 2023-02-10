@@ -7,6 +7,9 @@ from twisted.internet.protocol import Factory, Protocol, DatagramProtocol
 import sys
 import os
 from dotenv import load_dotenv
+# import logging
+
+# logging.basicConfig(filename=f'logs/secondary.log', filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 
 load_dotenv()
 
@@ -52,8 +55,6 @@ class Statistics:
     total_three_pc_time = 0
     packet_dropped = 0
 
-
-# (st_time, en_time) - processing time
 
 class State:
     per_flow_cnt = {}
@@ -127,7 +128,6 @@ def generate_statistics():
     filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}.csv'
 
     with open(filename, 'a') as f:
-        # f.write('Latency(ms), Throughput(byte/s), Packets Dropped\n')
         f.write(f'{latency},{throughput},{Statistics.packet_dropped}\n')
 
 
@@ -168,7 +168,7 @@ class EchoUDP(DatagramProtocol):
         # global_state_update(address)
 
 
-# CLUSTER_NAME = "deft-cluster"
+CLUSTER_NAME = "deft-cluster"
 LISTENING_PORT = 8000
 
 def main():
@@ -187,18 +187,18 @@ def main():
 
     # print(f'will open file {filename}')
 
-    # print(f"Trying to connect to cluster {CLUSTER_NAME}....")
+    print(f"Trying to connect to cluster {CLUSTER_NAME}....")
 
-    # hazelcast_client = hazelcast.HazelcastClient(cluster_members=["hazelcast:5701"],
-    #                                              cluster_name=CLUSTER_NAME)
-    # # hazelcast_client = hazelcast.HazelcastClient(cluster_members=["172.17.0.2:5701"],
-    # #                                             cluster_name=CLUSTER_NAME)
-    # print("Connected!")
+    hazelcast_client = hazelcast.HazelcastClient(cluster_members=["hazelcast:5701"],
+                                                 cluster_name=CLUSTER_NAME)
+    # hazelcast_client = hazelcast.HazelcastClient(cluster_members=["172.17.0.2:5701"],
+    #                                             cluster_name=CLUSTER_NAME)
+    print("Connected!")
 
-    # per_flow_packet_counter = Hazelcast.create_per_flow_packet_counter(hazelcast_client)
+    per_flow_packet_counter = Hazelcast.create_per_flow_packet_counter(hazelcast_client)
 
-    # hazelcast_thread = threading.Thread(target=process_packet_with_hazelcast)
-    # hazelcast_thread.start()
+    hazelcast_thread = threading.Thread(target=process_packet_with_hazelcast)
+    hazelcast_thread.start()
 
     print(f"Listening for packets on port {LISTENING_PORT}")
     reactor.listenUDP(LISTENING_PORT, EchoUDP())
