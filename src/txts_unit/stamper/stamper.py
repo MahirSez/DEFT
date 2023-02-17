@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import os
 from dotenv import load_dotenv
+import redis
 
 load_dotenv()
 
@@ -12,6 +13,7 @@ HZ_CLIENT_IP_PATTERN = os.getenv('HZ_CLIENT_IP_PATTERN')
 
 STAMPER_LISTEN_PORT = int(os.getenv('STAMPER_LISTEN_PORT'))
 HZ_CLIENT_LISTEN_PORT = int(os.getenv('HZ_CLIENT_LISTEN_PORT'))
+GLOBAL_KEY = 'NEXT_CLIENT'
 
 
 @dataclass
@@ -23,7 +25,8 @@ class Flow:
 class Stamper(DatagramProtocol):
 
     def __init__(self):
-        self.next_client = 0
+
+        self.redis_client = redis.Redis(host='redis')
 
         # should use redis
         self.flow_to_client = {} 
@@ -41,8 +44,9 @@ class Stamper(DatagramProtocol):
 
     def select_hz_client(self, flow):
         if flow not in self.flow_to_client:
-            self.flow_to_client[flow] = self.hz_client_ips[self.next_client]
-            self.next_client = (self.next_client + 1) % HZ_CLIENT_CNT
+
+            next_client = self.redis_client.incr(GLOBAL_KEY) % HZ_CLIENT_CNT
+            self.flow_to_client[flow] = self.hz_client_ips[next_client]
 
         return self.flow_to_client[flow]
 
@@ -50,11 +54,14 @@ class Stamper(DatagramProtocol):
         if flow not in self.flow_pkt_cnt:
             self.flow_pkt_cnt[flow] = 0
 
-        stamp = f'\n{self.flow_pkt_cnt[flow]}\n'
+        stamp = f'\n{flow}\n'
+        stamp += f'{self.flow_pkt_cnt[flow]}'
         data += bytes(stamp, 'ascii')
 
         return data
 
+    def incr_pkt_cnt(self, flow):
+        self.flow_pkt_cnt[flow] += 1
 
     
     def datagramReceived(self, data, src_addr):
@@ -68,6 +75,7 @@ class Stamper(DatagramProtocol):
         print(f'forwarding to ip {dst_hz_client} & port {HZ_CLIENT_LISTEN_PORT}')
 
         data = self.stamp_packet(data, src_addr)
+        self.incr_pkt_cnt(src_addr)
 
         self.transport.write(data, (dst_hz_client, HZ_CLIENT_LISTEN_PORT))
 

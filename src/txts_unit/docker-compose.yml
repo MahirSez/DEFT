@@ -31,6 +31,8 @@ services:
     build:
         context: .
         dockerfile: stamper.Dockerfile
+    depends_on:
+      - redis
     scale: ${STAMPER_CNT}
 
   nginx:
@@ -42,6 +44,5 @@ services:
       - stamper
     image: nginx
 
-
-
-
+  redis:
+    image: redis:7.0.8
