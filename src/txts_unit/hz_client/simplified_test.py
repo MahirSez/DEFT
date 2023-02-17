@@ -148,8 +148,10 @@ def generate_statistics():
     batch_size = int(os.getenv('BATCH_SIZE'))
     buffer_size = int(os.getenv('BUFFER_SIZE'))
     packet_rate = int(os.getenv('PACKET_RATE'))
+    stamper_count = int(os.getenv('STAMPER_CNT'))
+    flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
     
-    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}.csv'
+    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
 
     with open(filename, 'a') as f:
         # f.write('Latency(ms), Throughput(byte/s), Packets Dropped\n')
@@ -250,8 +252,10 @@ def main():
     batch_size = int(os.getenv('BATCH_SIZE'))
     buffer_size = int(os.getenv('BUFFER_SIZE'))
     packet_rate = int(os.getenv('PACKET_RATE'))
+    stamper_count = int(os.getenv('STAMPER_CNT'))
+    flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
     
-    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}.csv'
+    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
 
     print(f'will open file {filename}')
 
