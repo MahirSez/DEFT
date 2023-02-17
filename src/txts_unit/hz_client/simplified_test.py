@@ -115,15 +115,12 @@ def process_packet_with_hazelcast():
 
     while True:
         pkt, pkt_id = Buffers.input_buffer.get()
-
         process_a_packet(pkt, pkt_id)
-
         pkt_num_of_cur_batch += 1
 
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
             pkt_num_of_cur_batch = 0
             empty_output_buffer()
-
             if can_update_local_state():
                 local_state_update()
 
@@ -133,7 +130,6 @@ def process_packet_with_hazelcast():
         if Statistics.processed_pkts + Statistics.packet_dropped == Limit.PKTS_NEED_TO_PROCESS:
             time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
             process_time = time_delta / 1000.0 + Statistics.total_two_pc_time
-
             generate_statistics()
             break
 
@@ -186,11 +182,7 @@ def global_state_update(batches_processed: int):
 
 class EchoUDP(DatagramProtocol):
     def datagramReceived(self, datagram, address):
-        # print(str(datagram))  
-        # print(str(address))   
-        # self.transport.write(datagram, address)   
         receive_a_pkt(datagram)
-        # global_state_update(address)
 
 
 CLUSTER_NAME = "deft-cluster"
@@ -200,9 +192,6 @@ LISTENING_PORT = 8000
 
 
 def get_ip_address(iface):
-
-    # f = os.popen(f'ifconfig {iface} | grep "inet\ addr" | cut -d: -f2 | cut -d" " -f1')
-    # f = os.popen(f'ifconfig {iface} | grep "inet"')
     process = subprocess.Popen(f'ifconfig {iface} | grep "inet"', shell=True, stderr=PIPE, stdout=PIPE)
     stdout, stderr = process.communicate()
     line = stdout.decode()
@@ -212,38 +201,19 @@ def get_ip_address(iface):
     return your_ip
 
 
-# def get_ip_address(iface):
-#     # f = os.popen(f'ifconfig {iface} | grep "inet\ addr" | cut -d: -f2 | cut -d" " -f1')
-#     f = os.popen(f'ifconfig {iface} | grep "inet"')
-#     line = f.read()
-#     your_ip = line.strip().split()[1]
-#     return your_ip
-
 def create_secondary():
-    # hostname=socket.gethostname()   
-    # ip = n1.ifaddresses('eth1')[n1.AF_INET][0]['addr']
-
     interface = "eth1"
     ip = get_ip_address(interface)
     if not ip:
         return None
-
     print(f"IP-address of interface {interface} is {ip}")
-    
     ip_segments = ip.split('.')
     ip_segments[-1] = str(int(ip_segments[-1]) + 100)
-
     secondary_address = 'http://' + '.'.join(ip_segments) + ":7000"
-
     return secondary_address
 
 def main():
     global master
-    # addresses = []
-
-    # addresses.append(create_secondary())
-    # print(addresses)
-
     if master is None:
         master = Primary()
 
@@ -256,19 +226,13 @@ def main():
     flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
     
     filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
-
     print(f'will open file {filename}')
-
     print(f"Trying to connect to cluster {CLUSTER_NAME}....")
 
     hazelcast_client = hazelcast.HazelcastClient(cluster_members=["hazelcast:5701"],
                                                  cluster_name=CLUSTER_NAME)
-    # hazelcast_client = hazelcast.HazelcastClient(cluster_members=["172.17.0.2:5701"],
-    #                                             cluster_name=CLUSTER_NAME)
     print("Connected!")
-
     per_flow_packet_counter = Hazelcast.create_per_flow_packet_counter(hazelcast_client)
-
     hazelcast_thread = threading.Thread(target=process_packet_with_hazelcast)
     hazelcast_thread.start()
 
