@@ -1,51 +1,49 @@
 import hazelcast
 import threading
 import queue
-from queue import PriorityQueue
 from twisted.internet import reactor
-from twisted.internet.protocol import Factory, Protocol, DatagramProtocol
+from twisted.internet.protocol import DatagramProtocol
 import sys
 import os
+from dataclasses import dataclass
 from dotenv import load_dotenv
 import subprocess
-from subprocess import DEVNULL, STDOUT, check_call, PIPE
-
+from subprocess import PIPE
 
 load_dotenv()
-
 
 sys.path.append('..')
 from exp_package import  Hazelcast, Helpers
 from exp_package.Two_phase_commit.primary_2pc import Primary
 
-import socket
 
 per_flow_packet_counter = None
 master: Primary = None
 
+@dataclass
+class PerflowState:
+    flow: str 
+    input_buffer_entry_time: dict[int, int]
+    output_buffer_entry_time: dict[int, int]
+    start_time: int
+    end_time: int
+    recieved_pkt: int = 0
+    processed_pkt: int = 0
+    dropped_pkt: int = 0
+    total_pkt_length: int = 0
+    total_delay_time: int = 0
+
 
 class Buffers:
-    input_buffer = queue.Queue(maxsize=100000)  # (pkts, pkts_id) tuples
+    input_buffer = queue.Queue(maxsize=100000)  # (pkts, pkts_id) tuplesp
     output_buffer = queue.Queue(maxsize=100000)  # (pkts, pkts_id) tuples
-
-
-class BufferTimeMaps:
-    input_in = {}
-    input_out = {}
-    output_in = {}
-    output_out = {}
-
-
-class Timestamps:
-    start_times, end_times = None, None
-
 
 class Limit:
     BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
-    PKTS_NEED_TO_PROCESS = 1000
+    PKTS_NEED_TO_PROCESS = 1000 # TODO: get it in Config
     GLOBAL_UPDATE_FREQUENCY = 1
     BUFFER_LIMIT = 1 * BATCH_SIZE
-
+    FLOW_CNT_PER_NF = int(os.getenv('FLOW_CNT_PER_NF'))
 
 class Statistics:
     processed_pkts = 0
@@ -54,50 +52,52 @@ class Statistics:
     total_delay_time = 0
     total_two_pc_time = 0
     packet_dropped = 0
-
-
-# (st_time, en_time) - processing time
-
-local_state = {
-    "received_packet" : 0,
-    "processed_packet" : 0
-}
+    flow_completed = 0
 
 class State:
     per_flow_cnt = {}
 
 
-def receive_a_pkt(pkt):
-    if Statistics.received_packets == 0:
-        Timestamps.start_time = Helpers.get_current_time_in_ms()
+perflow_states: dict[str, PerflowState] = {}
 
-    Statistics.received_packets += 1
-    local_state['received_packet'] += 1
-    # print(f'received pkts: {Statistics.received_packets}')
-    # redis_client.incr("packet_count " + host_var)
+def get_stamps(pkt) -> tuple[str, int]:
+    pkt_data = pkt.decode().split("\n") 
+    stamp_id = int(pkt_data[-1])
+    flow = pkt_data[-2]
+    return flow, stamp_id
+
+def get_state_from_flow(flow): 
+    try:
+        return perflow_states[flow]
+    except KeyError:
+        perflow_states[flow] = PerflowState(flow, {}, {}, Helpers.get_current_time_in_ms(), 0)
+        return perflow_states[flow]
+
+def receive_single_pkt(pkt):
+    flow, stamp_id = get_stamps(pkt)
+    states = get_state_from_flow(flow)
+    states.recieved_pkt += 1
 
     if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
-        Buffers.input_buffer.put((pkt, Statistics.received_packets))
-        BufferTimeMaps.input_in[Statistics.received_packets] = Helpers.get_current_time_in_ms()
+        Buffers.input_buffer.put((pkt, stamp_id))
+        states.input_buffer_entry_time[stamp_id] = Helpers.get_current_time_in_ms()
     else:
-        Statistics.packet_dropped += 1
+        states.dropped_pkt += 1
 
 
-def process_a_packet(packet, packet_id):
-    Statistics.processed_pkts += 1
-    Statistics.total_packet_size += len(packet)
-    print(f'Length of packet is {len(packet)}')
-    print(f'Processed pkts: {Statistics.processed_pkts}')
-    local_state['processed_packet'] += 1
+def process_single_pkt(pkt, pkt_id):  # packet_id == stamp_id
+    flow, stamp_id = get_stamps(pkt)
+    states = get_state_from_flow(flow)
 
-    Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
+    states.processed_pkt += 1
+    states.total_pkt_length += len(pkt)
 
-    Buffers.output_buffer.put((packet, packet_id))
-    BufferTimeMaps.output_in[packet_id] = Helpers.get_current_time_in_ms()
+    states.total_delay_time += Helpers.get_current_time_in_ms() - states.input_buffer_entry_time[pkt_id]
+    Buffers.output_buffer.put((pkt, pkt_id))
+    states.output_buffer_entry_time[pkt_id] = Helpers.get_current_time_in_ms()
 
 
 def can_update_local_state():
-
     if len(master.slaves) > 0:
         return True
     
@@ -115,7 +115,9 @@ def process_packet_with_hazelcast():
 
     while True:
         pkt, pkt_id = Buffers.input_buffer.get()
-        process_a_packet(pkt, pkt_id)
+        process_single_pkt(pkt, pkt_id)
+        flow, _ = get_stamps(pkt)
+        states = get_state_from_flow(flow)
         pkt_num_of_cur_batch += 1
 
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
@@ -127,12 +129,15 @@ def process_packet_with_hazelcast():
         if pkt_num_of_cur_batch % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE:
             global_state_update(10)
 
-        if Statistics.processed_pkts + Statistics.packet_dropped == Limit.PKTS_NEED_TO_PROCESS:
-            time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
-            process_time = time_delta / 1000.0 + Statistics.total_two_pc_time
+        if is_flow_completed(states): 
+            Statistics.flow_completed += 1
+            states.end_time = Helpers.get_current_time_in_ms()
+        
+        if Statistics.flow_completed == Limit.FLOW_CNT_PER_NF:
             generate_statistics()
-            break
 
+def is_flow_completed(states: PerflowState):
+    return states.processed_pkt + states.dropped_pkt >= Limit.PKTS_NEED_TO_PROCESS
 
 def generate_statistics():
     time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
@@ -140,6 +145,10 @@ def generate_statistics():
     throughput = Statistics.total_packet_size / total_process_time
     latency = Statistics.total_delay_time / Statistics.processed_pkts
 
+    ## calculate latency and thoughput for each flow here, and then merge as single values
+    # for state in perflow_states: 
+    #     latency()
+    #     throughput()
 
     batch_size = int(os.getenv('BATCH_SIZE'))
     buffer_size = int(os.getenv('BUFFER_SIZE'))
@@ -150,15 +159,15 @@ def generate_statistics():
     filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
 
     with open(filename, 'a') as f:
-        # f.write('Latency(ms), Throughput(byte/s), Packets Dropped\n')
         f.write(f'{latency},{throughput},{Statistics.packet_dropped}\n')
 
 
 def empty_output_buffer():
     while not Buffers.output_buffer.empty():
-        _, pkt_id = Buffers.output_buffer.get()
-        # print(f'current pkt {pkt_id}')
-        Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.output_in[pkt_id]
+        pkt, pkt_id = Buffers.output_buffer.get()
+        flow, _ = get_stamps(pkt)
+        states = get_state_from_flow(flow)
+        states.total_delay_time += Helpers.get_current_time_in_ms() - states.output_buffer_entry_time[pkt_id]
 
 
 def local_state_update():
@@ -182,7 +191,7 @@ def global_state_update(batches_processed: int):
 
 class EchoUDP(DatagramProtocol):
     def datagramReceived(self, datagram, address):
-        receive_a_pkt(datagram)
+        receive_single_pkt(datagram)
 
 
 CLUSTER_NAME = "deft-cluster"
