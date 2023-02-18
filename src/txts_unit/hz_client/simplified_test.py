@@ -59,6 +59,7 @@ class State:
 
 
 perflow_states: dict[str, PerflowState] = {}
+local_state = {}
 
 def get_stamps(pkt) -> tuple[str, int]:
     pkt_data = pkt.decode().split("\n") 
@@ -70,7 +71,13 @@ def get_state_from_flow(flow):
     try:
         return perflow_states[flow]
     except KeyError:
-        perflow_states[flow] = PerflowState(flow, {}, {}, Helpers.get_current_time_in_ms(), 0)
+        perflow_states[flow] = PerflowState(
+            flow, 
+            {}, 
+            {}, 
+            Helpers.get_current_time_in_ms(), 
+            0
+        )
         return perflow_states[flow]
 
 def receive_single_pkt(pkt):
@@ -129,7 +136,7 @@ def process_packet_with_hazelcast():
         if pkt_num_of_cur_batch % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE:
             global_state_update(10)
 
-        if is_flow_completed(states): 
+        if is_flow_completed(states):
             Statistics.flow_completed += 1
             states.end_time = Helpers.get_current_time_in_ms()
         
@@ -140,16 +147,6 @@ def is_flow_completed(states: PerflowState):
     return states.processed_pkt + states.dropped_pkt >= Limit.PKTS_NEED_TO_PROCESS
 
 def generate_statistics():
-    time_delta = Helpers.get_current_time_in_ms() - Timestamps.start_time
-    total_process_time = time_delta / 1000.0
-    throughput = Statistics.total_packet_size / total_process_time
-    latency = Statistics.total_delay_time / Statistics.processed_pkts
-
-    ## calculate latency and thoughput for each flow here, and then merge as single values
-    # for state in perflow_states: 
-    #     latency()
-    #     throughput()
-
     batch_size = int(os.getenv('BATCH_SIZE'))
     buffer_size = int(os.getenv('BUFFER_SIZE'))
     packet_rate = int(os.getenv('PACKET_RATE'))
@@ -158,8 +155,19 @@ def generate_statistics():
     
     filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
 
-    with open(filename, 'a') as f:
-        f.write(f'{latency},{throughput},{Statistics.packet_dropped}\n')
+    for flow, state in perflow_states.items(): 
+        # latency()
+        time_delta = state.end_time - state.start_time
+        total_process_time = time_delta / 1000.0
+        throughput = state.total_pkt_length / total_process_time
+        latency = state.total_delay_time / state.processed_pkt
+
+        flow_string = flow.replace('(', "") \
+                          .replace(")", "") \
+                          .replace(",", ":")
+                          
+        with open(filename, 'a') as f:
+            f.write(f'{flow_string},{latency},{throughput},{state.dropped_pkt}\n')
 
 
 def empty_output_buffer():
@@ -196,8 +204,6 @@ class EchoUDP(DatagramProtocol):
 
 CLUSTER_NAME = "deft-cluster"
 LISTENING_PORT = 8000
-
-
 
 
 def get_ip_address(iface):

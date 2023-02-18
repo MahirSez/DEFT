@@ -25,7 +25,7 @@ mkdir -p results
 batchs=(10)
 buffers=(30)
 pkt_rates=(100)
-flow_counts=(2)
+flow_counts=(4)
 stamper_counts=(2)
 
 for stamper_count in "${stamper_counts[@]}"; do
@@ -36,16 +36,15 @@ for stamper_count in "${stamper_counts[@]}"; do
                     echo "Batch size = $batch_size, Buffer size = $buffer_size, Packet rate = $packet_rate, Flow Count = $flow_count"
                     
                     # replace env values in .env file
+                    flow_cnt_per_nf=$((flow_count/2))
                     sed -i~ "/^BATCH_SIZE=/s/=.*/=$batch_size/" .env
                     sed -i~ "/^BUFFER_SIZE=/s/=.*/=$buffer_size/" .env
                     sed -i~ "/^PACKET_RATE=/s/=.*/=$packet_rate/" .env
                     sed -i~ "/^STAMPER_CNT=/s/=.*/=$stamper_count/" .env
-                    sed -i~ "/^FLOW_CNT_PER_NF=/s/=.*/=$flow_count/" .env
+                    sed -i~ "/^FLOW_CNT_PER_NF=/s/=.*/=$flow_cnt_per_nf/" .env
                     
-                    filename=results/batch_"${batch_size}"-buf_"${buffer_size}"-pktrate_"${packet_rate}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
-                    echo "$filename"
-                    touch "$filename"
-                    echo "Latency(ms), Throughput(byte/s), Packets Dropped" >> "$filename" 
+                    filename=results/batch_"${batch_size}"-buf_"${buffer_size}"-pktrate_"${packet_rate}"-flow_cnt_"${flow_cnt_per_nf}"-stamper_cnt_"${stamper_count}".csv
+                    echo "Flow, Latency(ms), Throughput(byte/s), Packets Dropped" >> "$filename" 
 
                     for trial in {1..1}; do
                         echo "Trial number $trial"
