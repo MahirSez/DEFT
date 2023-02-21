@@ -23,8 +23,8 @@ master: Primary = None
 @dataclass
 class PerflowState:
     flow: str 
-    input_buffer_entry_time: dict[int, int]
-    output_buffer_entry_time: dict[int, int]
+    input_buffer_entry_time: dict[tuple, int]
+    output_buffer_entry_time: dict[tuple, int]
     start_time: int
     end_time: int
     recieved_pkt: int = 0
@@ -86,22 +86,23 @@ def receive_single_pkt(pkt):
     states.recieved_pkt += 1
 
     if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
-        Buffers.input_buffer.put((pkt, stamp_id))
-        states.input_buffer_entry_time[stamp_id] = Helpers.get_current_time_in_ms()
+        Buffers.input_buffer.put((pkt, stamp_id, flow))
+        states.input_buffer_entry_time[(stamp_id, flow)] = Helpers.get_current_time_in_ms()
     else:
         states.dropped_pkt += 1
 
 
 def process_single_pkt(pkt, pkt_id):  # packet_id == stamp_id
-    flow, stamp_id = get_stamps(pkt)
+    flow, _ = get_stamps(pkt)
     states = get_state_from_flow(flow)
 
     states.processed_pkt += 1
     states.total_pkt_length += len(pkt)
 
-    states.total_delay_time += Helpers.get_current_time_in_ms() - states.input_buffer_entry_time[pkt_id]
-    Buffers.output_buffer.put((pkt, pkt_id))
-    states.output_buffer_entry_time[pkt_id] = Helpers.get_current_time_in_ms()
+    delay = Helpers.get_current_time_in_ms() - states.input_buffer_entry_time[(pkt_id, flow)]
+    states.total_delay_time += delay
+    Buffers.output_buffer.put((pkt, pkt_id, flow))
+    states.output_buffer_entry_time[(pkt_id, flow)] = Helpers.get_current_time_in_ms()
 
 
 def can_update_local_state():
@@ -121,7 +122,7 @@ def process_packet_with_hazelcast():
     uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
 
     while True:
-        pkt, pkt_id = Buffers.input_buffer.get()
+        pkt, pkt_id, flow = Buffers.input_buffer.get()
         process_single_pkt(pkt, pkt_id)
         flow, _ = get_stamps(pkt)
         states = get_state_from_flow(flow)
@@ -172,10 +173,10 @@ def generate_statistics():
 
 def empty_output_buffer():
     while not Buffers.output_buffer.empty():
-        pkt, pkt_id = Buffers.output_buffer.get()
-        flow, _ = get_stamps(pkt)
+        _, pkt_id, flow = Buffers.output_buffer.get()
         states = get_state_from_flow(flow)
-        states.total_delay_time += Helpers.get_current_time_in_ms() - states.output_buffer_entry_time[pkt_id]
+        delay = Helpers.get_current_time_in_ms() - states.output_buffer_entry_time[(pkt_id, flow)]
+        states.total_delay_time += delay
 
 
 def local_state_update():
