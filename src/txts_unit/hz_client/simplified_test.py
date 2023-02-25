@@ -153,8 +153,9 @@ def generate_statistics():
     packet_rate = int(os.getenv('PACKET_RATE'))
     stamper_count = int(os.getenv('STAMPER_CNT'))
     flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
+    trial=int(os.getenv('TRIAL'))
     
-    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
+    filename = f'results/run_{trial}-batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
 
     for flow, state in perflow_states.items(): 
         # latency()
@@ -240,8 +241,9 @@ def main():
     packet_rate = int(os.getenv('PACKET_RATE'))
     stamper_count = int(os.getenv('STAMPER_CNT'))
     flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
+    trial=int(os.getenv('TRIAL'))
     
-    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
+    filename = f'results/run_{trial}-batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
     print(f'will open file {filename}')
     print(f"Trying to connect to cluster {CLUSTER_NAME}....")
 
