@@ -40,7 +40,7 @@ class Buffers:
 
 class Limit:
     BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
-    PKTS_NEED_TO_PROCESS = 1000 # TODO: get it in Config
+    PKTS_NEED_TO_PROCESS = 100 # TODO: get it in Config
     GLOBAL_UPDATE_FREQUENCY = 1
     BUFFER_LIMIT = 1 * BATCH_SIZE
     FLOW_CNT_PER_NF = int(os.getenv('FLOW_CNT_PER_NF'))
@@ -140,11 +140,16 @@ def process_packet_with_hazelcast():
         if is_flow_completed(states):
             Statistics.flow_completed += 1
             states.end_time = Helpers.get_current_time_in_ms()
+            print(Statistics.flow_completed)
+            print(Limit.FLOW_CNT_PER_NF)
         
+
         if Statistics.flow_completed == Limit.FLOW_CNT_PER_NF:
             generate_statistics()
 
 def is_flow_completed(states: PerflowState):
+    # print(f'Processed pkt = {states.processed_pkt}')
+    # print(f'Dropped pkt = {states.dropped_pkt}')
     return states.processed_pkt + states.dropped_pkt >= Limit.PKTS_NEED_TO_PROCESS
 
 def generate_statistics():
@@ -156,6 +161,7 @@ def generate_statistics():
     trial=int(os.getenv('TRIAL'))
     
     filename = f'results/run_{trial}-batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
+    print(f"Writing stats to {filename}")
 
     for flow, state in perflow_states.items(): 
         # latency()
