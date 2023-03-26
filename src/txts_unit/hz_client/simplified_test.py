@@ -40,9 +40,10 @@ class Buffers:
 
 class Limit:
     BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
-    PKTS_NEED_TO_PROCESS = 100 # TODO: get it in Config
+    PKTS_NEED_TO_PROCESS = 1000 # TODO: get it in Config
     GLOBAL_UPDATE_FREQUENCY = 1
-    BUFFER_LIMIT = 1 * BATCH_SIZE
+    BUFFER_LIMIT = int(os.getenv('BUFFER_SIZE')) * BATCH_SIZE
+    # BUFFER_LIMIT = 100000
     FLOW_CNT_PER_NF = int(os.getenv('FLOW_CNT_PER_NF'))
 
 class Statistics:
@@ -62,7 +63,7 @@ perflow_states: dict[str, PerflowState] = {}
 local_state = {}
 
 def get_stamps(pkt) -> tuple[str, int]:
-    pkt_data = pkt.decode().split("\n") 
+    pkt_data = pkt.decode('latin-1').split("\n") 
     stamp_id = int(pkt_data[-1])
     flow = pkt_data[-2]
     return flow, stamp_id
@@ -135,6 +136,7 @@ def process_packet_with_hazelcast():
                 local_state_update()
 
         if pkt_num_of_cur_batch % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE:
+            # for i in range(10):
             global_state_update(10)
 
         if is_flow_completed(states):
@@ -160,22 +162,23 @@ def generate_statistics():
     flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
     trial=int(os.getenv('TRIAL'))
     
-    filename = f'results/run_{trial}-batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
+    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
     print(f"Writing stats to {filename}")
 
     for flow, state in perflow_states.items(): 
         # latency()
         time_delta = state.end_time - state.start_time
         total_process_time = time_delta / 1000.0
-        throughput = state.total_pkt_length / total_process_time
+        throughput_bps = state.total_pkt_length / total_process_time
         latency = state.total_delay_time / state.processed_pkt
+        throughput_pps = state.processed_pkt / total_process_time
 
         flow_string = flow.replace('(', "") \
                           .replace(")", "") \
                           .replace(",", ":")
                           
         with open(filename, 'a') as f:
-            f.write(f'{flow_string},{latency},{throughput},{state.dropped_pkt}\n')
+            f.write(f'{flow_string},{latency},{throughput_bps}, {throughput_pps}, {state.dropped_pkt}\n')
 
 
 def empty_output_buffer():
@@ -249,7 +252,7 @@ def main():
     flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
     trial=int(os.getenv('TRIAL'))
     
-    filename = f'results/run_{trial}-batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
+    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
     print(f'will open file {filename}')
     print(f"Trying to connect to cluster {CLUSTER_NAME}....")
 

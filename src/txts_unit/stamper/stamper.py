@@ -54,6 +54,8 @@ class Stamper(DatagramProtocol):
         if flow not in self.flow_pkt_cnt:
             self.flow_pkt_cnt[flow] = 0
 
+        # data = bytes.fromhex(data).decode('utf-8')
+        print(f'data in stamp_packet method {data}')
         stamp = f'\n{flow}\n'
         stamp += f'{self.flow_pkt_cnt[flow]}'
         data += bytes(stamp, 'ascii')
@@ -66,6 +68,9 @@ class Stamper(DatagramProtocol):
     
     def datagramReceived(self, data, src_addr):
         src_ip, src_port = src_addr
+
+        # print(data)
+        # print(type(data))
 
         print(f'received {data} from ({src_ip}, {src_port})')
         
