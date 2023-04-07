@@ -9,6 +9,9 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 import subprocess
 from subprocess import PIPE
+import redis
+import random
+
 
 load_dotenv()
 
@@ -16,6 +19,10 @@ sys.path.append('..')
 from exp_package import  Hazelcast, Helpers
 from exp_package.Two_phase_commit.primary_2pc import Primary
 
+
+redis_client = redis.Redis(host='redis', db=5)
+
+NF_COMPLETE_KEY = "NF_COMPLETE"
 
 per_flow_packet_counter = None
 master: Primary = None
@@ -147,7 +154,11 @@ def process_packet_with_hazelcast():
         
 
         if Statistics.flow_completed == Limit.FLOW_CNT_PER_NF:
+            empty_output_buffer()
             generate_statistics()
+
+            redis_client.incr(NF_COMPLETE_KEY)
+            exit(0)
 
 def is_flow_completed(states: PerflowState):
     # print(f'Processed pkt = {states.processed_pkt}')
@@ -186,6 +197,8 @@ def empty_output_buffer():
         _, pkt_id, flow = Buffers.output_buffer.get()
         states = get_state_from_flow(flow)
         delay = Helpers.get_current_time_in_ms() - states.output_buffer_entry_time[(pkt_id, flow)]
+
+        redis_client.set(str(f'{(pkt_id, flow)}'), Helpers.get_current_time_in_ms())
         states.total_delay_time += delay
 
 
