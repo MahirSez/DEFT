@@ -35,6 +35,11 @@ services:
       - redis
     scale: ${STAMPER_CNT}
 
+  timestamper:
+    build:
+        context: .
+        dockerfile: timestamper.Dockerfile
+
   nginx:
     ports:
       - 8080:8080/udp
