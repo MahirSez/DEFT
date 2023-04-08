@@ -25,6 +25,7 @@ class PerflowState:
     flow: str 
     input_buffer_entry_time: dict[tuple, int]
     output_buffer_entry_time: dict[tuple, int]
+    
     start_time: int
     end_time: int
     recieved_pkt: int = 0
@@ -40,7 +41,7 @@ class Buffers:
 
 class Limit:
     BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
-    PKTS_NEED_TO_PROCESS = 1000 # TODO: get it in Config
+    PKTS_NEED_TO_PROCESS = int(os.getenv('PKTS_NEED_TO_PROCESS'))
     GLOBAL_UPDATE_FREQUENCY = 1
     BUFFER_LIMIT = int(os.getenv('BUFFER_SIZE')) * BATCH_SIZE
     # BUFFER_LIMIT = 100000
@@ -66,7 +67,8 @@ def get_stamps(pkt) -> tuple[str, int]:
     pkt_data = pkt.decode('latin-1').split("\n") 
     stamp_id = int(pkt_data[-1])
     flow = pkt_data[-2]
-    return flow, stamp_id
+    start_time = int(pkt_data[-3])
+    return flow, stamp_id, start_time
 
 def get_state_from_flow(flow): 
     try:
@@ -76,25 +78,31 @@ def get_state_from_flow(flow):
             flow, 
             {}, 
             {}, 
-            Helpers.get_current_time_in_ms(), 
+            # Helpers.get_current_time_in_ms(), 
+            -1,
             0
         )
         return perflow_states[flow]
 
 def receive_single_pkt(pkt):
-    flow, stamp_id = get_stamps(pkt)
+    flow, stamp_id, stamped_time = get_stamps(pkt)
     states = get_state_from_flow(flow)
+
+    if states.start_time == -1:
+        states.start_time = stamped_time
+
     states.recieved_pkt += 1
 
     if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
         Buffers.input_buffer.put((pkt, stamp_id, flow))
-        states.input_buffer_entry_time[(stamp_id, flow)] = Helpers.get_current_time_in_ms()
+        # states.input_buffer_entry_time[(stamp_id, flow)] = Helpers.get_current_time_in_ms()
+        states.input_buffer_entry_time[(stamp_id, flow)] = stamped_time
     else:
         states.dropped_pkt += 1
 
 
 def process_single_pkt(pkt, pkt_id):  # packet_id == stamp_id
-    flow, _ = get_stamps(pkt)
+    flow, _, _ = get_stamps(pkt)
     states = get_state_from_flow(flow)
 
     states.processed_pkt += 1
@@ -125,7 +133,7 @@ def process_packet_with_hazelcast():
     while True:
         pkt, pkt_id, flow = Buffers.input_buffer.get()
         process_single_pkt(pkt, pkt_id)
-        flow, _ = get_stamps(pkt)
+        flow, _, _ = get_stamps(pkt)
         states = get_state_from_flow(flow)
         pkt_num_of_cur_batch += 1
 
@@ -142,8 +150,8 @@ def process_packet_with_hazelcast():
         if is_flow_completed(states):
             Statistics.flow_completed += 1
             states.end_time = Helpers.get_current_time_in_ms()
-            print(Statistics.flow_completed)
-            print(Limit.FLOW_CNT_PER_NF)
+            # print(Statistics.flow_completed)
+            # print(Limit.FLOW_CNT_PER_NF)
         
 
         if Statistics.flow_completed == Limit.FLOW_CNT_PER_NF:
@@ -199,13 +207,13 @@ def local_state_update():
 
 def global_state_update(batches_processed: int):
     # global state update
-    print(f'Global state update')
+    # print(f'Global state update')
     map_key = "global"
     per_flow_packet_counter.lock(map_key)
     value = per_flow_packet_counter.get(map_key)
     per_flow_packet_counter.set(map_key, batches_processed if value is None else value + batches_processed)
     per_flow_packet_counter.unlock(map_key)
-    print(per_flow_packet_counter.get(map_key))
+    # print(per_flow_packet_counter.get(map_key))
 
 
 class EchoUDP(DatagramProtocol):

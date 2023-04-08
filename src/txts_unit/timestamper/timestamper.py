@@ -2,6 +2,7 @@ from twisted.internet.protocol import DatagramProtocol
 from twisted.internet import reactor
 from dataclasses import dataclass
 import time
+import socket
 
 import os
 from dotenv import load_dotenv
@@ -24,25 +25,45 @@ def get_current_time_in_ms():
 
 class TimeStamper(DatagramProtocol):
     def __init__(self):
-
-        print('Configured hz_clint IP list:')
-        print(self.hz_client_ips)
+        self.pkt_cnt = 0
+        self.pkt_cnt_since_last_reading = 0
+        self.init_time = get_current_time_in_ms()
 
     def stamp_packet(self, data):
         # data = bytes.fromhex(data).decode('utf-8')
-        print(f'data in stamp_packet method {data}')
+        # print(f'data in stamp_packet method {data}')
         stamp = f'\n{get_current_time_in_ms()}'
         data += bytes(stamp, 'ascii')
 
         return data
+    
+    def should_take_rate_reading(self):
+        current_time = get_current_time_in_ms()
+        return current_time - self.init_time >= 1000
 
     def datagramReceived(self, data, src_addr):
         src_ip, src_port = src_addr
-        print(f'received {data} from ({src_ip}, {src_port})')
+        self.pkt_cnt += 1
+        self.pkt_cnt_since_last_reading += 1
+
+        if self.should_take_rate_reading():
+            current_time = get_current_time_in_ms()
+            delay = (current_time - self.init_time) / 1000.0
+            rate = self.pkt_cnt_since_last_reading / delay
+
+            self.init_time = current_time
+            self.pkt_cnt_since_last_reading = 0
+
+            print(f"Current packet rate is: {rate} | processed packets = {self.pkt_cnt}" )
+
+        # print(f'received {data} from ({src_ip}, {src_port}) | pkt_cnt = {self.pkt_cnt}')
         data = self.stamp_packet(data)
-        print(f'timestamped pkt: {data}')
-        print(f'forwarding to ip {STAMPER_IP} & port {STAMPER_LISTEN_PORT}')
-        self.transport.write(data, (STAMPER_IP, STAMPER_LISTEN_PORT))
+        # print(f'timestamped pkt: {data}')
+        
+        
+        nginx_ip = socket.gethostbyname('nginx')
+        # print(f'forwarding to {nginx_ip} & port 8080')
+        self.transport.write(data, (nginx_ip, 8080))
 
 
 reactor.listenUDP(TIME_STAMPER_LISTEN_PORT, TimeStamper())

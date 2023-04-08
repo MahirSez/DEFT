@@ -26,6 +26,9 @@ class Stamper(DatagramProtocol):
 
     def __init__(self):
 
+        self.pkt_cnt = 0
+        self.pkt_cnt_since_last_reading = 0
+
         self.redis_client = redis.Redis(host='redis')
 
         # should use redis
@@ -55,7 +58,7 @@ class Stamper(DatagramProtocol):
             self.flow_pkt_cnt[flow] = 0
 
         # data = bytes.fromhex(data).decode('utf-8')
-        print(f'data in stamp_packet method {data}')
+        # print(f'data in stamp_packet method {data}')
         stamp = f'\n{flow}\n'
         stamp += f'{self.flow_pkt_cnt[flow]}'
         data += bytes(stamp, 'ascii')
@@ -72,12 +75,19 @@ class Stamper(DatagramProtocol):
         # print(data)
         # print(type(data))
 
-        print(f'received {data} from ({src_ip}, {src_port})')
+        # print(f'received {data} from ({src_ip}, {src_port})')
         
 
         dst_hz_client = self.select_hz_client(src_addr)
 
-        print(f'forwarding to ip {dst_hz_client} & port {HZ_CLIENT_LISTEN_PORT}')
+        self.pkt_cnt += 1
+        self.pkt_cnt_since_last_reading += 1
+        if self.pkt_cnt_since_last_reading == 1000:
+            print("Packets processed: ", self.pkt_cnt)
+            self.pkt_cnt_since_last_reading = 0
+
+
+        # print(f'forwarding to ip {dst_hz_client} & port {HZ_CLIENT_LISTEN_PORT} | pkt_cnt = {self.pkt_cnt}')
 
         data = self.stamp_packet(data, src_addr)
         self.incr_pkt_cnt(src_addr)
