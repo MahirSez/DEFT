@@ -5,14 +5,22 @@ sudo ovs-vsctl add-br ovs-br1
 # reads configuration from .env
 HZ_CLIENT_CNT=$(grep HZ_CLIENT_CNT .env | cut -d '=' -f2)
 HZ_CLIENT_IP_PATTERN=$(grep HZ_CLIENT_IP_PATTERN .env | cut -d '=' -f2)
+STAMPER_IP_LAST_OCTET=$(grep STAMPER_IP_LAST_OCTET .env | cut -d '=' -f2)
 
 
 # sudo ifconfig ovs-br1 173.16.1.1 netmask 255.255.255.0 up
 sudo ifconfig ovs-br1 "${HZ_CLIENT_IP_PATTERN/$/1}" netmask 255.255.255.0 up
 
 
+# adds timestamper module with last octet = 200
+timestamper_id=${HZ_CLIENT_IP_PATTERN/$/200}/24
+command="sudo ovs-docker add-port ovs-br1 eth1 txts_unit_timestamper_1 --ipaddress=$timestamper_id"
+echo "$command"
+$command
+
+
 # adds stamper module with last octet = 230
-stamper_ip=${HZ_CLIENT_IP_PATTERN/$/230}/24
+stamper_ip=${HZ_CLIENT_IP_PATTERN/$/STAMPER_IP_LAST_OCTET}/24
 command="sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=$stamper_ip"
 echo "$command"
 $command
