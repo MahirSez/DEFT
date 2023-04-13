@@ -44,8 +44,6 @@ services:
     scale: ${STAMPER_CNT}
 
   nginx:
-    # ports:
-    #   - 8080:8080/udp
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
@@ -64,3 +62,6 @@ services:
 
   redis:
     image: redis:7.0.8
+    ports:
+      - 6378:6379
+

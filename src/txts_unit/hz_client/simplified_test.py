@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 import subprocess
 from subprocess import PIPE
+import redis
 
 load_dotenv()
 
@@ -16,6 +17,9 @@ sys.path.append('..')
 from exp_package import  Hazelcast, Helpers
 from exp_package.Two_phase_commit.primary_2pc import Primary
 
+NF_DONE_KEY = "NF_DONE"
+
+redis_client = redis.Redis(host='redis')
 
 per_flow_packet_counter = None
 master: Primary = None
@@ -187,6 +191,9 @@ def generate_statistics():
                           
         with open(filename, 'a') as f:
             f.write(f'{flow_string},{latency},{throughput_bps}, {throughput_pps}, {state.dropped_pkt}\n')
+    
+    redis_client.incr(NF_DONE_KEY)
+    
 
 
 def empty_output_buffer():
