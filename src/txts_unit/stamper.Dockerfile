@@ -14,6 +14,6 @@ RUN apt install -y curl telnet dnsutils
 
 
 COPY stamper/ .
-COPY .env .
+# COPY .env .
 
 CMD ["python", "-u", "stamper.py"]

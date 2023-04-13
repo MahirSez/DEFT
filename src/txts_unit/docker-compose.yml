@@ -16,6 +16,8 @@ services:
       - ./results:/code/results
       - ./logs:/code/logs
     scale: ${HZ_CLIENT_CNT}
+    env_file:
+      - .env
 
   secondary:
     build:
@@ -26,6 +28,8 @@ services:
     volumes:
       - ./logs:/code/logs
     scale: ${HZ_CLIENT_CNT}
+    env_file:
+      - .env
 
   stamper:
     build:
@@ -34,6 +38,8 @@ services:
     depends_on:
       - redis
     scale: ${STAMPER_CNT}
+    env_file:
+      - .env
 
   timestamper:
     # ports:
@@ -42,10 +48,10 @@ services:
         context: .
         dockerfile: timestamper.Dockerfile
     scale: ${STAMPER_CNT}
+    env_file:
+      - .env
 
   nginx:
-    # ports:
-    #   - 8080:8080/udp
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
@@ -64,3 +70,6 @@ services:
 
   redis:
     image: redis:7.0.8
+    ports:
+      - 6378:6379
+
