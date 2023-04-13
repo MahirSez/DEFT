@@ -13,6 +13,6 @@ RUN apt install -y curl telnet dnsutils
 
 
 COPY timestamper/ .
-COPY .env .
+# COPY .env .
 
 CMD ["python", "-u", "timestamper.py"]

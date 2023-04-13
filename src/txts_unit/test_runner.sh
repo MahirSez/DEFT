@@ -1,5 +1,5 @@
 #!/bin/bash
-set -xe
+set -x
 packet_count=1000
 run_test() {
     docker-compose down
@@ -20,7 +20,7 @@ run_test() {
     do
         # b_rate=$(( $1 * 1400 ))
         # dd if="packet_sender_data.txt" bs=1400 count="$packet_count" | pv --rate-limit "$b_rate" --bytes | nc -u 127.0.0.1 8080
-        iperf -c 127.0.0.1 -p 8080 -u -b "$1"pps -F packet_sender_data.txt -l 100 -t 30 -x CDMSV &
+        iperf -c 127.0.0.1 -p 8080 -u -b "$1"pps -F packet_sender_data.txt -l 100 -t 60 -x CDMSV &
         # packetsender --udp --rate "$1" --num "$packet_count" 127.0.0.1 8080 --file packet_sender_data.txt &
     done
     python kill_iperf.py
@@ -35,8 +35,11 @@ batches=(80)
 buffers=(100)
 pkt_rates=(200)
 flow_counts=(10)
-# stamper_counts=(1 2 3 4 5)
-stamper_counts=(1)
+stamper_counts=(3)
+# stamper_counts=(1)
+
+docker-compose build
+
 
 for stamper_count in "${stamper_counts[@]}"; do
     for flow_count in "${flow_counts[@]}"; do
@@ -63,6 +66,7 @@ for stamper_count in "${stamper_counts[@]}"; do
                         sed -i~ "/^TRIAL=/s/=.*/=$trial/" .env
                         run_test "$pr" "$flow_count" 
                     done
+                    echo
                 done
             done
         done
