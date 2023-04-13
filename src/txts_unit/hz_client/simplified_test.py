@@ -60,6 +60,10 @@ class Statistics:
     packet_dropped = 0
     flow_completed = 0
 
+class Buffer_Statistics:
+    input_buffer_length = 0
+    output_buffer_length = 0
+
 class State:
     per_flow_cnt = {}
 
@@ -99,6 +103,9 @@ def receive_single_pkt(pkt):
 
     if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
         Buffers.input_buffer.put((pkt, stamp_id, flow))
+        Buffer_Statistics.input_buffer_length = \
+            max(Buffer_Statistics.input_buffer_length, \
+                Buffers.input_buffer.qsize())
         # states.input_buffer_entry_time[(stamp_id, flow)] = Helpers.get_current_time_in_ms()
         states.input_buffer_entry_time[(stamp_id, flow)] = stamped_time
     else:
@@ -115,6 +122,9 @@ def process_single_pkt(pkt, pkt_id):  # packet_id == stamp_id
     delay = Helpers.get_current_time_in_ms() - states.input_buffer_entry_time[(pkt_id, flow)]
     states.total_delay_time += delay
     Buffers.output_buffer.put((pkt, pkt_id, flow))
+    Buffer_Statistics.output_buffer_length = \
+        max(Buffer_Statistics.output_buffer_length, \
+            Buffers.output_buffer.qsize())
     states.output_buffer_entry_time[(pkt_id, flow)] = Helpers.get_current_time_in_ms()
 
 
@@ -188,13 +198,14 @@ def generate_statistics():
         flow_string = flow.replace('(', "") \
                           .replace(")", "") \
                           .replace(",", ":")
+
+
                           
         with open(filename, 'a') as f:
-            f.write(f'{flow_string},{latency},{throughput_bps}, {throughput_pps}, {state.dropped_pkt}\n')
-    
+            f.write(f'{flow_string},{latency},{throughput_bps}, {throughput_pps}, {state.dropped_pkt}, \
+                                    {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}\n')
+            
     redis_client.incr(NF_DONE_KEY)
-    
-
 
 def empty_output_buffer():
     while not Buffers.output_buffer.empty():
