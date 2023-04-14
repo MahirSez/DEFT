@@ -101,6 +101,7 @@ def get_state_from_flow(flow):
             flow,
             {},
             {},
+            {},
             -1,
             0
         )
@@ -241,9 +242,11 @@ def generate_statistics():
         total_time_in_output_buffer += state.time_in_output_buffer
 
     latency = total_delay_ms / total_processed_pkt
+    average_time_in_input_buffer = total_time_in_input_buffer / total_processed_pkt
+    average_time_in_output_buffer = total_time_in_output_buffer / total_processed_pkt
 
     with open(filename, 'a') as f:
-        f.write(f'{latency},{total_throughput_bps}, {total_throughput_pps}, {total_processed_pkt}, {total_dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}, {total_time_in_input_buffer}, {total_time_in_output_buffer}\n')
+        f.write(f'{latency},{total_throughput_bps}, {total_throughput_pps}, {total_processed_pkt}, {total_dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}, {average_time_in_input_buffer}, {average_time_in_output_buffer}\n')
 
     redis_client.incr(NF_DONE_KEY)
 
