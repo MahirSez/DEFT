@@ -1,7 +1,7 @@
 FROM python:3.10.8
 WORKDIR /code/
 
-COPY hz_client/requirements.txt .
+COPY timestamper/requirements.txt .
 
 RUN pip install -r requirements.txt
 
@@ -11,10 +11,8 @@ RUN apt install -y inetutils-traceroute
 RUN apt install -y iproute2
 RUN apt install -y curl telnet dnsutils
 
-COPY hz_client/ .
+
+COPY timestamper/ .
 # COPY .env .
 
-# CMD ["nc", "-ul", "8000"]
-# CMD ["python", "-u", "secondary_test.py"]
-# CMD [ "bash", "secondary_script_wrapper.sh" ]
-CMD ["python", "-u", "backup.py"]
+CMD ["python", "-u", "timestamper.py"]

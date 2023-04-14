@@ -5,6 +5,7 @@ sudo ovs-vsctl add-br ovs-br1
 # reads configuration from .env
 HZ_CLIENT_CNT=$(grep HZ_CLIENT_CNT .env | cut -d '=' -f2)
 HZ_CLIENT_IP_PATTERN=$(grep HZ_CLIENT_IP_PATTERN .env | cut -d '=' -f2)
+STAMPER_IP_LAST_OCTET=$(grep STAMPER_IP_LAST_OCTET .env | cut -d '=' -f2)
 
 
 # sudo ifconfig ovs-br1 173.16.1.1 netmask 255.255.255.0 up
