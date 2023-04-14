@@ -42,12 +42,10 @@ services:
       - .env
 
   timestamper:
-    # ports:
-    #   - 8080:6000/udp
     build:
         context: .
         dockerfile: timestamper.Dockerfile
-    scale: 4
+    scale: ${TIMESTAMPER_CNT}
     env_file:
       - .env
 

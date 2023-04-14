@@ -51,7 +51,7 @@ class Limit:
     GLOBAL_UPDATE_FREQUENCY = 1
     BUFFER_LIMIT = int(os.getenv('BUFFER_SIZE')) * BATCH_SIZE
     # BUFFER_LIMIT = 100000
-    FLOW_CNT_PER_NF = int(os.getenv('FLOW_CNT_PER_NF'))
+    FLOW_CNT = int(os.getenv('FLOW_CNT'))
 
 class Statistics:
     processed_pkts = 0
@@ -121,12 +121,6 @@ def process_single_pkt(pkt, pkt_id):  # packet_id == stamp_id
     states.processed_pkt += 1
     states.total_pkt_length += len(pkt)
 
-    if (pkt_id, flow) not in states.input_buffer_entry_time:
-        print("PANIC!!!")
-        print("pkt id: ", pkt_id)
-        print("FLow: ", flow)
-        print("Map ize: ", len(states.input_buffer_entry_time))
-
     delay = Helpers.get_current_time_in_ms() - states.input_buffer_entry_time[(pkt_id, flow)]
     states.total_delay_time += delay
     Buffers.output_buffer.put((pkt, pkt_id, flow))
@@ -180,11 +174,9 @@ def process_packet_with_hazelcast():
         if is_flow_completed(states):
             Statistics.flow_completed += 1
             states.end_time = Helpers.get_current_time_in_ms()
-            # print(f'Flow completed: {Statistics.flow_completed}')
-            # print(Limit.FLOW_CNT_PER_NF)
         
 
-        if Statistics.flow_completed == Limit.FLOW_CNT_PER_NF:
+        if nf_pkt_cnt == Limit.PKTS_NEED_TO_PROCESS:
             generate_statistics()
 
 def is_flow_completed(states: PerflowState):
@@ -195,14 +187,12 @@ def generate_statistics():
     buffer_size = int(os.getenv('BUFFER_SIZE'))
     packet_rate = int(os.getenv('PACKET_RATE'))
     stamper_count = int(os.getenv('STAMPER_CNT'))
-    flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
-    trial=int(os.getenv('TRIAL'))
+    flow_count = int(os.getenv('FLOW_CNT'))
     
     filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
     print(f"Writing stats to {filename}")
 
     for flow, state in perflow_states.items(): 
-        # latency()
         time_delta = state.end_time - state.start_time
         total_process_time = time_delta / 1000.0
         throughput_bps = state.total_pkt_length / total_process_time
@@ -216,8 +206,7 @@ def generate_statistics():
 
                           
         with open(filename, 'a') as f:
-            f.write(f'{flow_string},{latency},{throughput_bps}, {throughput_pps}, {state.dropped_pkt}, \
-                                    {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}\n')
+            f.write(f'{flow_string},{latency},{throughput_bps}, {throughput_pps}, {state.dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}\n')
             
     redis_client.incr(NF_DONE_KEY)
 
@@ -286,8 +275,7 @@ def main():
     buffer_size = int(os.getenv('BUFFER_SIZE'))
     packet_rate = int(os.getenv('PACKET_RATE'))
     stamper_count = int(os.getenv('STAMPER_CNT'))
-    flow_count = int(os.getenv('FLOW_CNT_PER_NF'))
-    trial=int(os.getenv('TRIAL'))
+    flow_count = int(os.getenv('FLOW_CNT'))
     
     filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
     print(f'will open file {filename}')
