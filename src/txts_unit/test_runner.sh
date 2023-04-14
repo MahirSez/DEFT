@@ -25,18 +25,20 @@ rm -rf results/*
 mkdir -p results
 
 batches=(80)
-flow_counts=(5)
 stamper_counts=(1 2 3 4 5)
 
-docker-compose build
+flow_counts=(500)
+effective_packet_rate=(10000)
 
+
+docker-compose build
 echo "Tracking Time" > time_output.txt
 
 for stamper_count in "${stamper_counts[@]}"; do
     for flow_count in "${flow_counts[@]}"; do
         for bs in "${batches[@]}"; do
             for (( bfs=10 ; bfs<=10 ; bfs++ )); do
-                for (( pr=2000 ; pr<=2000 ; pr+=500 )); do
+                for (( pr=20 ; pr<=20 ; pr+=500 )); do
                     echo "Batch size = $batch_size, Buffer size = $buffer_size, Packet rate = $packet_rate, Flow Count = $flow_count"
                     
                     # replace env values in .env file
@@ -49,14 +51,20 @@ for stamper_count in "${stamper_counts[@]}"; do
                     sed -i~ "/^HZ_CLIENT_CNT=/s/=.*/=$nf_cnt/" .env
                      
                     filename=results/batch_"${bs}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
-                    echo "Flow, Latency(ms), Throughput(byte/s), Throughput(pps), Packets Dropped, Input Buffer Max Length, Output Buffer Max Length" >> "$filename"
+                    echo "Latency(ms), Throughput(byte/s), Throughput(pps), Packets Processed, Packets Dropped, Input Buffer Max Length, Output Buffer Max Length" >> "$filename"
 
                     for trial in {1..1}; do
                         echo "Trial number $trial"
                         sed -i~ "/^TRIAL=/s/=.*/=$trial/" .env
 
                         echo "NF Count: " $nf_cnt >> time_output.txt
-                        {time run_test "$pr" "$flow_count"} >> time_output.txt
+
+                        start=$(date +%s.%N)
+                        run_test "$pr" "$flow_count"
+                        end=$(date +%s.%N)
+                        echo "Elapsed time: $(echo "$end - $start" | bc) seconds" >> time_output.txt
+
+                        python summarize_result.py $filename
                     done
                 done
             done

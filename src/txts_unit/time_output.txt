@@ -1,0 +1,3 @@
+Tracking Time
+NF Count:  2
+Elapsed time: 38.389428706 seconds

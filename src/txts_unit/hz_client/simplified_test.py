@@ -190,23 +190,35 @@ def generate_statistics():
     filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
     print(f"Writing stats to {filename}")
 
+    total_throughput_bps = 0
+    total_throughput_pps = 0
+    total_delay_ms = 0
+    total_processed_pkt = 0
+    total_dropped_pkt = 0
+
     for flow, state in perflow_states.items(): 
         time_delta_ms = state.end_time - state.start_time
-        process_time_second = time_delta_ms / 1000.0
-        throughput_bps = state.total_pkt_length / process_time_second
-        latency = state.total_delay_time / state.processed_pkt
-        throughput_pps = state.processed_pkt / process_time_second
 
-        flow_string = flow.replace('(', "") \
-                          .replace(")", "") \
-                          .replace(",", ":")
+        assert time_delta_ms > 0
 
-        print("Printing stats for flow: ", flow)
-        print("Start Time ", state.start_time)
-        print("End Time ", state.end_time)
-                          
-        with open(filename, 'a') as f:
-            f.write(f'{flow_string},{latency},{throughput_bps}, {throughput_pps}, {state.dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}\n')
+        time_delta_second = time_delta_ms / 1000.0
+
+        throughput_bps = state.total_pkt_length / time_delta_second
+        total_throughput_bps += throughput_bps
+
+        throughput_pps = state.processed_pkt / time_delta_second
+        total_throughput_pps += throughput_pps
+
+        total_delay_ms += state.total_delay_time
+        total_processed_pkt += state.processed_pkt        
+        total_dropped_pkt += state.dropped_pkt
+
+
+    latency = total_delay_ms / total_processed_pkt
+
+
+    with open(filename, 'a') as f:
+        f.write(f'{latency},{total_throughput_bps}, {total_throughput_pps}, {total_processed_pkt}, {total_dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}\n')
             
     redis_client.incr(NF_DONE_KEY)
 
