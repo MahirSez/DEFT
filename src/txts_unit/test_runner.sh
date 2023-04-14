@@ -26,11 +26,11 @@ mkdir -p results
 
 batches=(80)
 flow_counts=(5)
-# stamper_counts=(1 2 3 4 5)
-stamper_counts=(1)
+stamper_counts=(1 2 3 4 5)
 
 docker-compose build
 
+echo "Tracking Time" > time_output.txt
 
 for stamper_count in "${stamper_counts[@]}"; do
     for flow_count in "${flow_counts[@]}"; do
@@ -54,7 +54,9 @@ for stamper_count in "${stamper_counts[@]}"; do
                     for trial in {1..1}; do
                         echo "Trial number $trial"
                         sed -i~ "/^TRIAL=/s/=.*/=$trial/" .env
-                        time (run_test "$pr" "$flow_count") 
+
+                        echo "NF Count: " $nf_cnt >> time_output.txt
+                        {time run_test "$pr" "$flow_count"} >> time_output.txt
                     done
                 done
             done

@@ -21,8 +21,7 @@ NF_DONE_KEY = "NF_DONE"
 
 redis_client = redis.Redis(host='redis')
 
-nf_pkt_cnt = 0
-nf_pkt_cnt_since_last_reading = 0
+
 per_flow_packet_counter = None
 master: Primary = None
 
@@ -61,6 +60,9 @@ class Statistics:
     total_two_pc_time = 0
     packet_dropped = 0
     flow_completed = 0
+
+    nf_pkt_cnt = 0
+    nf_pkt_cnt_since_last_reading = 0
 
 class Buffer_Statistics:
     input_buffer_length = 0
@@ -141,12 +143,11 @@ def can_update_local_state():
     return True
 
 def update_pkt_cnt_for_printing():
-    global nf_pkt_cnt, nf_pkt_cnt_since_last_reading
-    nf_pkt_cnt += 1
-    nf_pkt_cnt_since_last_reading += 1
-    if nf_pkt_cnt_since_last_reading == 1000:
-        print("Packets processed: ", nf_pkt_cnt)
-        nf_pkt_cnt_since_last_reading = 0
+    Statistics.nf_pkt_cnt += 1
+    Statistics.nf_pkt_cnt_since_last_reading += 1
+    if Statistics.nf_pkt_cnt_since_last_reading == 1000:
+        print("Packets processed: ", Statistics.nf_pkt_cnt)
+        Statistics.nf_pkt_cnt_since_last_reading = 0
 
 def process_packet_with_hazelcast():
     pkt_num_of_cur_batch = 0
@@ -161,9 +162,10 @@ def process_packet_with_hazelcast():
 
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
             pkt_num_of_cur_batch = 0
-            empty_output_buffer()
             if can_update_local_state():
                 local_state_update()
+
+            empty_output_buffer()
 
         # if pkt_num_of_cur_batch % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE:
         #     # for i in range(10):
@@ -171,12 +173,8 @@ def process_packet_with_hazelcast():
 
         update_pkt_cnt_for_printing()
 
-        if is_flow_completed(states):
-            Statistics.flow_completed += 1
-            states.end_time = Helpers.get_current_time_in_ms()
-        
-
-        if nf_pkt_cnt == Limit.PKTS_NEED_TO_PROCESS:
+        if Statistics.nf_pkt_cnt == Limit.PKTS_NEED_TO_PROCESS:
+            empty_output_buffer() # to clear remaining packets from buffer
             generate_statistics()
 
 def is_flow_completed(states: PerflowState):
@@ -193,17 +191,19 @@ def generate_statistics():
     print(f"Writing stats to {filename}")
 
     for flow, state in perflow_states.items(): 
-        time_delta = state.end_time - state.start_time
-        total_process_time = time_delta / 1000.0
-        throughput_bps = state.total_pkt_length / total_process_time
+        time_delta_ms = state.end_time - state.start_time
+        process_time_second = time_delta_ms / 1000.0
+        throughput_bps = state.total_pkt_length / process_time_second
         latency = state.total_delay_time / state.processed_pkt
-        throughput_pps = state.processed_pkt / total_process_time
+        throughput_pps = state.processed_pkt / process_time_second
 
         flow_string = flow.replace('(', "") \
                           .replace(")", "") \
                           .replace(",", ":")
 
-
+        print("Printing stats for flow: ", flow)
+        print("Start Time ", state.start_time)
+        print("End Time ", state.end_time)
                           
         with open(filename, 'a') as f:
             f.write(f'{flow_string},{latency},{throughput_bps}, {throughput_pps}, {state.dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}\n')
@@ -216,6 +216,8 @@ def empty_output_buffer():
         states = get_state_from_flow(flow)
         delay = Helpers.get_current_time_in_ms() - states.output_buffer_entry_time[(pkt_id, flow)]
         states.total_delay_time += delay
+
+        states.end_time = Helpers.get_current_time_in_ms()
 
 
 def local_state_update():
