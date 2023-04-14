@@ -7,4 +7,4 @@ zipp==3.8.0
 Twisted==22.10.0
 python-dotenv==0.21.0
 netifaces==0.11.0
-redis==4.5.1
+redis==4.5.4
