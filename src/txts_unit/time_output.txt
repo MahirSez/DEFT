@@ -1,0 +1,160 @@
+NF count:  5
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_2 --ipaddress=173.16.1.3/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_2 --ipaddress=173.16.1.103/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.3,actions=normal,mod_nw_dst:173.16.1.103,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_3 --ipaddress=173.16.1.4/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_3 --ipaddress=173.16.1.104/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.4,actions=normal,mod_nw_dst:173.16.1.104,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_4 --ipaddress=173.16.1.5/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_4 --ipaddress=173.16.1.105/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.5,actions=normal,mod_nw_dst:173.16.1.105,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_5 --ipaddress=173.16.1.6/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_5 --ipaddress=173.16.1.106/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.6,actions=normal,mod_nw_dst:173.16.1.106,normal
+rate is 2000
+Waiting for NFs to finish...
+NF count:  5
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_2 --ipaddress=173.16.1.3/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_2 --ipaddress=173.16.1.103/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.3,actions=normal,mod_nw_dst:173.16.1.103,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_3 --ipaddress=173.16.1.4/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_3 --ipaddress=173.16.1.104/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.4,actions=normal,mod_nw_dst:173.16.1.104,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_4 --ipaddress=173.16.1.5/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_4 --ipaddress=173.16.1.105/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.5,actions=normal,mod_nw_dst:173.16.1.105,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_5 --ipaddress=173.16.1.6/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_5 --ipaddress=173.16.1.106/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.6,actions=normal,mod_nw_dst:173.16.1.106,normal
+rate is 2000
+Waiting for NFs to finish...
+NF count:  5
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_2 --ipaddress=173.16.1.3/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_2 --ipaddress=173.16.1.103/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.3,actions=normal,mod_nw_dst:173.16.1.103,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_3 --ipaddress=173.16.1.4/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_3 --ipaddress=173.16.1.104/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.4,actions=normal,mod_nw_dst:173.16.1.104,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_4 --ipaddress=173.16.1.5/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_4 --ipaddress=173.16.1.105/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.5,actions=normal,mod_nw_dst:173.16.1.105,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_5 --ipaddress=173.16.1.6/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_5 --ipaddress=173.16.1.106/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.6,actions=normal,mod_nw_dst:173.16.1.106,normal
+rate is 2000
+Waiting for NFs to finish...
+NF count:  5
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_2 --ipaddress=173.16.1.3/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_2 --ipaddress=173.16.1.103/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.3,actions=normal,mod_nw_dst:173.16.1.103,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_3 --ipaddress=173.16.1.4/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_3 --ipaddress=173.16.1.104/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.4,actions=normal,mod_nw_dst:173.16.1.104,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_4 --ipaddress=173.16.1.5/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_4 --ipaddress=173.16.1.105/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.5,actions=normal,mod_nw_dst:173.16.1.105,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_5 --ipaddress=173.16.1.6/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_5 --ipaddress=173.16.1.106/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.6,actions=normal,mod_nw_dst:173.16.1.106,normal
+rate is 7000
+Waiting for NFs to finish...
+NF count:  5
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_2 --ipaddress=173.16.1.3/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_2 --ipaddress=173.16.1.103/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.3,actions=normal,mod_nw_dst:173.16.1.103,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_3 --ipaddress=173.16.1.4/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_3 --ipaddress=173.16.1.104/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.4,actions=normal,mod_nw_dst:173.16.1.104,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_4 --ipaddress=173.16.1.5/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_4 --ipaddress=173.16.1.105/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.5,actions=normal,mod_nw_dst:173.16.1.105,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_5 --ipaddress=173.16.1.6/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_5 --ipaddress=173.16.1.106/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.6,actions=normal,mod_nw_dst:173.16.1.106,normal
+rate is 500
+NF count:  5
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_2 --ipaddress=173.16.1.3/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_2 --ipaddress=173.16.1.103/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.3,actions=normal,mod_nw_dst:173.16.1.103,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_3 --ipaddress=173.16.1.4/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_3 --ipaddress=173.16.1.104/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.4,actions=normal,mod_nw_dst:173.16.1.104,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_4 --ipaddress=173.16.1.5/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_4 --ipaddress=173.16.1.105/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.5,actions=normal,mod_nw_dst:173.16.1.105,normal
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_5 --ipaddress=173.16.1.6/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_5 --ipaddress=173.16.1.106/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.6,actions=normal,mod_nw_dst:173.16.1.106,normal
+rate is 500
+NF count:  1
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+rate is 500
+NF count:  1
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+rate is 5000
+NF count:  1
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+rate is 2500
+NF count:  1
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+rate is 2500
+NF count:  1
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+rate is 2500
+NF count:  1
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+rate is 2500
+NF count:  1
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+rate is 2500
+NF count:  1
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_stamper_1 --ipaddress=173.16.1.230/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_hz_client_1 --ipaddress=173.16.1.2/24
+sudo ovs-docker add-port ovs-br1 eth1 txts_unit_secondary_1 --ipaddress=173.16.1.102/24
+sudo ovs-ofctl add-flow ovs-br1 dl_type=0x0800,nw_proto=17,nw_dst=173.16.1.2,actions=normal,mod_nw_dst:173.16.1.102,normal
+rate is 2500

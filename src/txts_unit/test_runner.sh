@@ -2,6 +2,8 @@
 set -x
 packet_count=1000
 run_test() {
+    python kill_iperf.py --force
+
     docker-compose down
     docker-compose up -d
     sleep 10
@@ -12,17 +14,8 @@ run_test() {
         docker exec -d "$id" python -u secondary_test.py
     done;
 
-    # PKTS_NEED_TO_PROCESS=$(grep PKTS_NEED_TO_PROCESS .env | cut -d '=' -f2)
-    # duration=$((PKTS_NEED_TO_PROCESS/$1+10))
-    # echo "Duration: $duration"
+    iperf -c 127.0.0.1 -p 8080 -u -b "$1"pps -F packet_sender_data.txt -l 100 -t 1200 -x CDMSV -P "$2" &
 
-    for ((i=0;i<$2;i++))
-    do
-        # b_rate=$(( $1 * 1400 ))
-        # dd if="packet_sender_data.txt" bs=1400 count="$packet_count" | pv --rate-limit "$b_rate" --bytes | nc -u 127.0.0.1 8080
-        iperf -c 127.0.0.1 -p 8080 -u -b "$1"pps -F packet_sender_data.txt -l 100 -t 60 -x CDMSV &
-        # packetsender --udp --rate "$1" --num "$packet_count" 127.0.0.1 8080 --file packet_sender_data.txt &
-    done
     python kill_iperf.py
     
 }
@@ -33,10 +26,10 @@ mkdir -p results
 
 batches=(80)
 buffers=(100)
-pkt_rates=(200)
-flow_counts=(10)
-stamper_counts=(3)
-# stamper_counts=(1)
+# pkt_rates=(200)
+flow_counts=(4)
+# stamper_counts=(1 2 3 4 5)
+stamper_counts=(1)
 
 docker-compose build
 
@@ -45,7 +38,7 @@ for stamper_count in "${stamper_counts[@]}"; do
     for flow_count in "${flow_counts[@]}"; do
         for bs in "${batches[@]}"; do
             for (( bfs=10 ; bfs<=10 ; bfs++ )); do
-                for (( pr=1000 ; pr<=2000 ; pr+=500 )); do
+                for (( pr=2500 ; pr<=2500 ; pr+=500 )); do
                     echo "Batch size = $batch_size, Buffer size = $buffer_size, Packet rate = $packet_rate, Flow Count = $flow_count"
                     
                     # replace env values in .env file
@@ -64,9 +57,9 @@ for stamper_count in "${stamper_counts[@]}"; do
                     for trial in {1..1}; do
                         echo "Trial number $trial"
                         sed -i~ "/^TRIAL=/s/=.*/=$trial/" .env
-                        run_test "$pr" "$flow_count" 
+                        echo "NF count: " $nf_cnt >> time_output.txt
+                        time run_test "$pr" "$flow_count" >> time_output.txt
                     done
-                    echo
                 done
             done
         done

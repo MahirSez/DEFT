@@ -21,6 +21,8 @@ NF_DONE_KEY = "NF_DONE"
 
 redis_client = redis.Redis(host='redis')
 
+nf_pkt_cnt = 0
+nf_pkt_cnt_since_last_reading = 0
 per_flow_packet_counter = None
 master: Primary = None
 
@@ -102,12 +104,12 @@ def receive_single_pkt(pkt):
     states.recieved_pkt += 1
 
     if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
-        Buffers.input_buffer.put((pkt, stamp_id, flow))
-        Buffer_Statistics.input_buffer_length = \
-            max(Buffer_Statistics.input_buffer_length, \
-                Buffers.input_buffer.qsize())
         # states.input_buffer_entry_time[(stamp_id, flow)] = Helpers.get_current_time_in_ms()
         states.input_buffer_entry_time[(stamp_id, flow)] = stamped_time
+        
+        Buffers.input_buffer.put((pkt, stamp_id, flow))
+        Buffer_Statistics.input_buffer_length = max(Buffer_Statistics.input_buffer_length, Buffers.input_buffer.qsize())
+        
     else:
         states.dropped_pkt += 1
 
@@ -119,12 +121,16 @@ def process_single_pkt(pkt, pkt_id):  # packet_id == stamp_id
     states.processed_pkt += 1
     states.total_pkt_length += len(pkt)
 
+    if (pkt_id, flow) not in states.input_buffer_entry_time:
+        print("PANIC!!!")
+        print("pkt id: ", pkt_id)
+        print("FLow: ", flow)
+        print("Map ize: ", len(states.input_buffer_entry_time))
+
     delay = Helpers.get_current_time_in_ms() - states.input_buffer_entry_time[(pkt_id, flow)]
     states.total_delay_time += delay
     Buffers.output_buffer.put((pkt, pkt_id, flow))
-    Buffer_Statistics.output_buffer_length = \
-        max(Buffer_Statistics.output_buffer_length, \
-            Buffers.output_buffer.qsize())
+    Buffer_Statistics.output_buffer_length = max(Buffer_Statistics.output_buffer_length, Buffers.output_buffer.qsize())
     states.output_buffer_entry_time[(pkt_id, flow)] = Helpers.get_current_time_in_ms()
 
 
@@ -139,6 +145,14 @@ def can_update_local_state():
     print(f"New Slave added {secondary_ip}")
     master.add_secondary(secondary_ip)
     return True
+
+def update_pkt_cnt_for_printing():
+    global nf_pkt_cnt, nf_pkt_cnt_since_last_reading
+    nf_pkt_cnt += 1
+    nf_pkt_cnt_since_last_reading += 1
+    if nf_pkt_cnt_since_last_reading == 1000:
+        print("Packets processed: ", nf_pkt_cnt)
+        nf_pkt_cnt_since_last_reading = 0
 
 def process_packet_with_hazelcast():
     pkt_num_of_cur_batch = 0
@@ -157,14 +171,16 @@ def process_packet_with_hazelcast():
             if can_update_local_state():
                 local_state_update()
 
-        if pkt_num_of_cur_batch % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE:
-            # for i in range(10):
-            global_state_update(10)
+        # if pkt_num_of_cur_batch % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE:
+        #     # for i in range(10):
+        #     global_state_update(10)
+
+        update_pkt_cnt_for_printing()
 
         if is_flow_completed(states):
             Statistics.flow_completed += 1
             states.end_time = Helpers.get_current_time_in_ms()
-            # print(Statistics.flow_completed)
+            # print(f'Flow completed: {Statistics.flow_completed}')
             # print(Limit.FLOW_CNT_PER_NF)
         
 
@@ -172,8 +188,6 @@ def process_packet_with_hazelcast():
             generate_statistics()
 
 def is_flow_completed(states: PerflowState):
-    # print(f'Processed pkt = {states.processed_pkt}')
-    # print(f'Dropped pkt = {states.dropped_pkt}')
     return states.processed_pkt + states.dropped_pkt >= Limit.PKTS_NEED_TO_PROCESS
 
 def generate_statistics():
@@ -217,21 +231,18 @@ def empty_output_buffer():
 
 def local_state_update():
     global local_state
-    print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
     cur_time = Helpers.get_current_time_in_ms()
     master.replicate(local_state)
     Statistics.total_two_pc_time += Helpers.get_current_time_in_ms() - cur_time
 
 
 def global_state_update(batches_processed: int):
-    # global state update
-    # print(f'Global state update')
+
     map_key = "global"
     per_flow_packet_counter.lock(map_key)
     value = per_flow_packet_counter.get(map_key)
     per_flow_packet_counter.set(map_key, batches_processed if value is None else value + batches_processed)
     per_flow_packet_counter.unlock(map_key)
-    # print(per_flow_packet_counter.get(map_key))
 
 
 class EchoUDP(DatagramProtocol):

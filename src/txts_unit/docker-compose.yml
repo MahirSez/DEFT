@@ -47,7 +47,7 @@ services:
     build:
         context: .
         dockerfile: timestamper.Dockerfile
-    scale: ${STAMPER_CNT}
+    scale: 4
     env_file:
       - .env
 

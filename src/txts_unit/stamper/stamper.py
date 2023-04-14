@@ -72,12 +72,6 @@ class Stamper(DatagramProtocol):
     def datagramReceived(self, data, src_addr):
         src_ip, src_port = src_addr
 
-        # print(data)
-        # print(type(data))
-
-        # print(f'received {data} from ({src_ip}, {src_port})')
-        
-
         dst_hz_client = self.select_hz_client(src_addr)
 
         self.pkt_cnt += 1
@@ -85,9 +79,6 @@ class Stamper(DatagramProtocol):
         if self.pkt_cnt_since_last_reading == 1000:
             print("Packets processed: ", self.pkt_cnt)
             self.pkt_cnt_since_last_reading = 0
-
-
-        # print(f'forwarding to ip {dst_hz_client} & port {HZ_CLIENT_LISTEN_PORT} | pkt_cnt = {self.pkt_cnt}')
 
         data = self.stamp_packet(data, src_addr)
         self.incr_pkt_cnt(src_addr)
