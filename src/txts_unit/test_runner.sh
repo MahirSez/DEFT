@@ -14,7 +14,7 @@ run_test() {
         docker exec -d "$id" python -u secondary_test.py
     done;
 
-    iperf -c 127.0.0.1 -p 8080 -u -b "$1"pps -F packet_sender_data.txt -l 100 -t 1200 -x CDMSV -P "$2" &
+    iperf -c 127.0.0.1 -p 8080 -u -b "$1"pps -l 100 -t 1200 -x CDMSV -P "$2" &
 
     python kill_iperf.py
     
@@ -25,7 +25,7 @@ rm -rf results/*
 mkdir -p results
 
 batches=(80)
-stamper_counts=(1 2 3 4 5)
+stamper_counts=(1)
 
 flow_counts=(500)
 effective_packet_rate=(10000)
@@ -53,7 +53,7 @@ for stamper_count in "${stamper_counts[@]}"; do
                     filename=results/batch_"${bs}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
                     echo "Latency(ms), Throughput(byte/s), Throughput(pps), Packets Processed, Packets Dropped, Input Buffer Max Length, Output Buffer Max Length" >> "$filename"
 
-                    for trial in {1..1}; do
+                    for trial in {1..3}; do
                         echo "Trial number $trial"
                         sed -i~ "/^TRIAL=/s/=.*/=$trial/" .env
 
