@@ -50,8 +50,8 @@ for stamper_count in "${stamper_counts[@]}"; do
                     sed -i~ "/^FLOW_CNT=/s/=.*/=$flow_count/" .env
                     sed -i~ "/^HZ_CLIENT_CNT=/s/=.*/=$nf_cnt/" .env
                      
-                    filename=results/batch_"${bs}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
-                    echo "Latency(ms), Throughput(byte/s), Throughput(pps), Packets Processed, Packets Dropped, Input Buffer Max Length, Output Buffer Max Length, Time in Input Buffer(ms), Time in Output Buffer(ms)" >> "$filename"
+                    # filename=results/batch_"${bs}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
+                    # echo "Latency(ms), Throughput(byte/s), Throughput(pps), Packets Processed, Packets Dropped, Input Buffer Max Length, Output Buffer Max Length, Time in Input Buffer(ms), Time in Output Buffer(ms)" >> "$filename"
 
                     for trial in {1..1}; do
                         echo "Trial number $trial"
@@ -64,7 +64,7 @@ for stamper_count in "${stamper_counts[@]}"; do
                         end=$(date +%s.%N)
                         echo "Elapsed time: $(echo "$end - $start" | bc) seconds" >> time_output.txt
 
-                        # python summarize_result.py $filename
+                        # python summarize_result.py $filename``
                     done
                 done
             done

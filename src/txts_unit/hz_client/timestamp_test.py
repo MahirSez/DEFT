@@ -19,7 +19,6 @@ from exp_package import  Hazelcast, Helpers
 from exp_package.Two_phase_commit.primary_2pc import Primary
 
 NF_DONE_KEY = "NF_DONE"
-
 redis_client = redis.Redis(host='redis')
 
 
@@ -47,8 +46,9 @@ class Buffers:
     output_buffer = queue.Queue(maxsize=100000)  # (pkts, pkts_id) tuples
 
 class Limit:
+    GLOBAL_UPDATE_IN_A_ROW = int(os.getenv('GLOBAL_UPDATE_IN_A_ROW'))
     BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
-    GLOBAL_UPDATE_ON_EVERY = 150
+    GLOBAL_UPDATE_ON_EVERY = 200
     BUFFER_LIMIT = 4 * BATCH_SIZE
 
 class Statistics:
@@ -163,7 +163,7 @@ def process_packet_with_hazelcast():
         pkt_num_of_cur_batch += 1
 
         if pkt_num_of_cur_batch % uniform_global_distance == 0:
-            for i in range(10):
+            for i in range(Limit.GLOBAL_UPDATE_IN_A_ROW):
                 global_update_cnt += 1
                 global_state_update(2)
 
@@ -311,6 +311,7 @@ def main():
         master = Primary()
 
     global per_flow_packet_counter
+    print("info: value of GLOBAL_UPDATE_IN_A_ROW ", Limit.GLOBAL_UPDATE_IN_A_ROW)
 
     print(f"Trying to connect to cluster {CLUSTER_NAME}....")
 
