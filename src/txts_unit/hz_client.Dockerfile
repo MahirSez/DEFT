@@ -15,4 +15,5 @@ COPY hz_client/ .
 # COPY .env .
 
 # CMD ["nc", "-ul", "8000"]
-CMD ["python", "-u", "simplified_test.py"]
+# CMD ["python", "-u", "simplified_test.py"]
+CMD ["python", "-u", "timestamp_test.py"]

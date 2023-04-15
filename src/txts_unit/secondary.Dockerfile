@@ -12,9 +12,5 @@ RUN apt install -y iproute2
 RUN apt install -y curl telnet dnsutils
 
 COPY hz_client/ .
-# COPY .env .
 
-# CMD ["nc", "-ul", "8000"]
-# CMD ["python", "-u", "secondary_test.py"]
-# CMD [ "bash", "secondary_script_wrapper.sh" ]
 CMD ["python", "-u", "backup.py"]

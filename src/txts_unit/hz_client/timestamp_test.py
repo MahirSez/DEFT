@@ -34,7 +34,7 @@ class PerflowState:
     pkt_total_delay: dict[tuple, int] = field(default_factory=dict)
     
     start_time: int = 0,
-    end_time: int
+    end_time: int = 0
     recieved_pkt: int = 0
     processed_pkt: int = 0
     dropped_pkt: int = 0
@@ -48,11 +48,8 @@ class Buffers:
 
 class Limit:
     BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
-    PKTS_NEED_TO_PROCESS = int(os.getenv('PKTS_NEED_TO_PROCESS'))
-    GLOBAL_UPDATE_ON_EVERY = 100
+    GLOBAL_UPDATE_ON_EVERY = 150
     BUFFER_LIMIT = 4 * BATCH_SIZE
-
-    # BUFFER_LIMIT = 100000
 
 class Statistics:
     processed_pkts = 0
@@ -75,8 +72,6 @@ class State:
 
 
 perflow_states: dict[str, PerflowState] = {}
-# flow_processed_pkt: dict[str, int] = {}
-# flow_dropped_pkt: dict[str, int] = {}
 header_added = False
 global_update_cnt = 0
 two_pc_cnt = 0
@@ -163,10 +158,8 @@ def process_packet_with_hazelcast():
     global_start_time = start_time
 
     while True:
-        pkt, pkt_id, flow = Buffers.input_buffer.get()
+        pkt, pkt_id, _ = Buffers.input_buffer.get()
         process_single_pkt(pkt, pkt_id)
-        flow, _, _ = get_stamps(pkt)
-        states = get_state_from_flow(flow)
         pkt_num_of_cur_batch += 1
 
         if pkt_num_of_cur_batch % uniform_global_distance == 0:
@@ -175,7 +168,6 @@ def process_packet_with_hazelcast():
                 global_state_update(2)
 
         if Buffers.output_buffer.qsize() == Limit.BATCH_SIZE:
-            pkt_num_of_cur_batch = 0
             if can_update_local_state():
                 local_state_update()
                 two_pc_cnt += 1
@@ -197,23 +189,22 @@ def stat_collector():
     print("Stat collection complete")
 
 def generate_statistics(time_diff):
-    latency_sum = 0
-    throughput_sum = 0
     packets_dropped = 0
     packets_processed = 0
     active_flow_cnt = 0
-    pps = 0
+    total_delay_ms = 0
+    total_pkt_len = 0
 
     total_process_time = time_diff / 1000.0
 
-    for flow, state in perflow_states.items(): 
+    for _, state in perflow_states.items(): 
 
         if state.processed_pkt == 0:
             continue
 
         active_flow_cnt += 1
-        throughput_sum += state.total_pkt_length / total_process_time
-        latency_sum += state.total_delay_time / state.processed_pkt
+        total_pkt_len += state.total_pkt_length 
+        total_delay_ms += state.total_delay_time
         packets_dropped += state.dropped_pkt
         packets_processed += state.processed_pkt
 
@@ -223,15 +214,16 @@ def generate_statistics(time_diff):
         state.dropped_pkt = 0
 
     pps = packets_processed / total_process_time
+    throughput = total_pkt_len / total_process_time
 
-    if active_flow_cnt:
-        latency = latency_sum / active_flow_cnt
+    if packets_processed:
+        latency = total_delay_ms / packets_processed
         latency = f'{latency:.2f}'
     else:
         latency = '-'
 
 
-    write_stats_to_file(latency, int(throughput_sum), packets_dropped, packets_processed, pps, active_flow_cnt)
+    write_stats_to_file(latency, int(throughput), packets_dropped, packets_processed, pps, active_flow_cnt)
 
 def write_stats_to_file(latency: str, thoughput: int, packetdrop, packets_processed, pps, active_flow_cnt):
     global header_added, global_update_cnt, two_pc_cnt, pkt_delays

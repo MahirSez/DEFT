@@ -65,7 +65,7 @@ def receive_a_pkt(pkt):
         Timestamps.start_time = Helpers.get_current_time_in_ms()
 
     Statistics.received_packets += 1
-    print(f'received pkts: {Statistics.received_packets}')
+    # print(f'received pkts: {Statistics.received_packets}')
     # redis_client.incr("packet_count " + host_var)
 
     # if Buffers.input_buffer.qsize() < Limit.BUFFER_LIMIT:
@@ -78,8 +78,8 @@ def receive_a_pkt(pkt):
 def process_a_packet(packet, packet_id):
     Statistics.processed_pkts += 1
     Statistics.total_packet_size += len(packet)
-    print(f'Length of packet is {len(packet)}')
-    print(f'Processed pkts: {Statistics.processed_pkts}')
+    # print(f'Length of packet is {len(packet)}')
+    # print(f'Processed pkts: {Statistics.processed_pkts}')
 
     Statistics.total_delay_time += Helpers.get_current_time_in_ms() - BufferTimeMaps.input_in[packet_id]
 
@@ -141,7 +141,7 @@ def empty_output_buffer():
 def local_state_update():
     # local state update
     # print("------------------------------------------------------------------------------------------------------")
-    print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
+    # print(f'replicating on backup as per batch.\n cur_batch: {State.per_flow_cnt}')
     cur_time = Helpers.get_current_time_in_ms()
     global_state = per_flow_packet_counter.get("global")
     master.replicate(global_state)
@@ -150,13 +150,13 @@ def local_state_update():
 
 def global_state_update(batches_processed: int):
     # global state update
-    print(f'Global state update')
+    # print(f'Global state update')
     map_key = "global"
     per_flow_packet_counter.lock(map_key)
     value = per_flow_packet_counter.get(map_key)
     per_flow_packet_counter.set(map_key, batches_processed if value is None else value + batches_processed)
     per_flow_packet_counter.unlock(map_key)
-    print(per_flow_packet_counter.get(map_key))
+    # print(per_flow_packet_counter.get(map_key))
 
 
 class EchoUDP(DatagramProtocol):

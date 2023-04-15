@@ -64,7 +64,7 @@ for stamper_count in "${stamper_counts[@]}"; do
                         end=$(date +%s.%N)
                         echo "Elapsed time: $(echo "$end - $start" | bc) seconds" >> time_output.txt
 
-                        python summarize_result.py $filename
+                        # python summarize_result.py $filename
                     done
                 done
             done

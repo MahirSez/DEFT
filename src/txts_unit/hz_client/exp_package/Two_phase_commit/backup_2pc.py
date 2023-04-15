@@ -17,8 +17,8 @@ class Backup:
         # with open('../data/slave_state.json', 'w') as f:
         #     json.dump(state, f)
         
-        print('Received state from master: ')
-        print(state)
+        # print('Received state from master: ')
+        # print(state)
         return True
 
 
