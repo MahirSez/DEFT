@@ -257,7 +257,10 @@ def generate_statistics():
         average_time_in_output_buffer - average_time_in_pkt_processing
 
     with open(filename, 'a') as f:
-        f.write(f'{average_latency},{total_throughput_bps}, {total_throughput_pps}, {total_processed_pkt}, {total_dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}, {average_time_in_input_buffer}, {average_time_in_output_buffer}, {average_time_in_pkt_processing}\n')
+        f.write(f'{average_latency},{total_throughput_bps}, {total_throughput_pps}, \
+                {total_processed_pkt}, {total_dropped_pkt}, {Buffer_Statistics.input_buffer_length}, \
+                {Buffer_Statistics.output_buffer_length}, {average_time_in_input_buffer}, \
+                {average_time_in_output_buffer}, {average_time_in_pkt_processing}, {average_path_latency}\n')
 
     redis_client.incr(NF_DONE_KEY)
 
