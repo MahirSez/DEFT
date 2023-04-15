@@ -14,7 +14,7 @@ run_test() {
         docker exec -d "$id" python -u secondary_test.py
     done;
 
-    iperf -c 127.0.0.1 -p 8080 -u -b "$1"pps -F packet_sender_data.txt -l 100 -t 1200 -x CDMSV -P "$2" &
+    iperf -c 127.0.0.1 -p 8080 -u -b "$1"pps -l 100 -t 1200 -x CDMSV -P "$2" &
 
     python kill_iperf.py
     
@@ -25,9 +25,9 @@ rm -rf results/*
 mkdir -p results
 
 batches=(80)
-stamper_counts=(1 2 3 4 5)
+stamper_counts=(1)
 
-flow_counts=(500)
+flow_counts=(100)
 effective_packet_rate=(10000)
 
 
@@ -38,7 +38,7 @@ for stamper_count in "${stamper_counts[@]}"; do
     for flow_count in "${flow_counts[@]}"; do
         for bs in "${batches[@]}"; do
             for (( bfs=10 ; bfs<=10 ; bfs++ )); do
-                for (( pr=20 ; pr<=20 ; pr+=500 )); do
+                for (( pr=100 ; pr<=100 ; pr+=500 )); do
                     echo "Batch size = $batch_size, Buffer size = $buffer_size, Packet rate = $packet_rate, Flow Count = $flow_count"
                     
                     # replace env values in .env file
@@ -51,7 +51,7 @@ for stamper_count in "${stamper_counts[@]}"; do
                     sed -i~ "/^HZ_CLIENT_CNT=/s/=.*/=$nf_cnt/" .env
                      
                     filename=results/batch_"${bs}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
-                    echo "Latency(ms), Throughput(byte/s), Throughput(pps), Packets Processed, Packets Dropped, Input Buffer Max Length, Output Buffer Max Length" >> "$filename"
+                    echo "Latency(ms), Throughput(byte/s), Throughput(pps), Packets Processed, Packets Dropped, Input Buffer Max Length, Output Buffer Max Length, Time in Input Buffer(ms), Time in Output Buffer(ms)" >> "$filename"
 
                     for trial in {1..1}; do
                         echo "Trial number $trial"
@@ -71,4 +71,3 @@ for stamper_count in "${stamper_counts[@]}"; do
         done
     done
 done
-
