@@ -40,7 +40,7 @@ class PerflowState:
     dropped_pkt: int = 0
     time_in_input_buffer: int = 0
     time_in_output_buffer: int = 0
-    # total_time_spent_in_processing: int = 0
+    time_in_pkt_processing: int = 0
     total_pkt_length: int = 0
     total_delay_time: int = 0
 
@@ -143,6 +143,11 @@ def process_single_pkt(pkt, pkt_id):  # packet_id = stamp_id
     ) - states.stamper_entry_time[(pkt_id, flow)]
     states.total_delay_time += delay
 
+    # pkt processing
+    process_start = Helpers.get_current_time_in_ms()
+    # TODO: NF actually process the packets now
+    states.time_in_pkt_processing += Helpers.get_current_time_in_ms() - process_start
+
     Buffers.output_buffer.put((pkt, pkt_id, flow))
     Buffer_Statistics.output_buffer_length = max(
         Buffer_Statistics.output_buffer_length, Buffers.output_buffer.qsize())
@@ -220,6 +225,7 @@ def generate_statistics():
     total_processed_pkt = 0
     total_dropped_pkt = 0
     total_time_in_input_buffer = 0
+    total_time_in_pkt_processing = 0
     total_time_in_output_buffer = 0
 
     for flow, state in perflow_states.items():
@@ -239,14 +245,19 @@ def generate_statistics():
         total_processed_pkt += state.processed_pkt
         total_dropped_pkt += state.dropped_pkt
         total_time_in_input_buffer += state.time_in_input_buffer
+        total_time_in_pkt_processing += state.time_in_pkt_processing
         total_time_in_output_buffer += state.time_in_output_buffer
 
-    latency = total_delay_ms / total_processed_pkt
+    average_latency = total_delay_ms / total_processed_pkt
     average_time_in_input_buffer = total_time_in_input_buffer / total_processed_pkt
     average_time_in_output_buffer = total_time_in_output_buffer / total_processed_pkt
+    average_time_in_pkt_processing = total_time_in_pkt_processing / total_processed_pkt
+
+    average_path_latency = average_latency - average_time_in_input_buffer - \
+        average_time_in_output_buffer - average_time_in_pkt_processing
 
     with open(filename, 'a') as f:
-        f.write(f'{latency},{total_throughput_bps}, {total_throughput_pps}, {total_processed_pkt}, {total_dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}, {average_time_in_input_buffer}, {average_time_in_output_buffer}\n')
+        f.write(f'{average_latency},{total_throughput_bps}, {total_throughput_pps}, {total_processed_pkt}, {total_dropped_pkt}, {Buffer_Statistics.input_buffer_length}, {Buffer_Statistics.output_buffer_length}, {average_time_in_input_buffer}, {average_time_in_output_buffer}, {average_time_in_pkt_processing}\n')
 
     redis_client.incr(NF_DONE_KEY)
 
