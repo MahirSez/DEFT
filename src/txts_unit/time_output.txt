@@ -1,7 +1,15 @@
 Tracking Time
 NF Count:  1
-Elapsed time: 30.314266310 seconds
+Elapsed time: 43.731679500 seconds
 NF Count:  1
-Elapsed time: 31.471776659 seconds
+Elapsed time: 35.152222004 seconds
 NF Count:  1
-Elapsed time: 31.344132533 seconds
+Elapsed time: 34.751207708 seconds
+NF Count:  1
+Elapsed time: 34.162490203 seconds
+NF Count:  1
+Elapsed time: 34.230330008 seconds
+NF Count:  1
+Elapsed time: 34.598519121 seconds
+NF Count:  1
+Elapsed time: 34.484305208 seconds
