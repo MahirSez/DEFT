@@ -58,7 +58,7 @@ echo "Tracking Time" > time_output.txt
                         filename=results/batch_"${bs}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
                         echo "Latency(ms), Throughput(byte/s), Throughput(pps), Packets Processed, Packets Dropped, Input Buffer Max Length, Output Buffer Max Length, Time in Input Buffer(ms), Time in Output Buffer(ms)" >> "$filename"
 
-                        for trial in {1..1}; do
+                        for trial in {1..10}; do
                             echo "Trial number $trial"
                             sed -i~ "/^TRIAL=/s/=.*/=$trial/" .env
 
