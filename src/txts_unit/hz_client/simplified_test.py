@@ -53,7 +53,7 @@ class Buffers:
 class Limit:
     BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
     PKTS_NEED_TO_PROCESS = int(os.getenv('PKTS_NEED_TO_PROCESS'))
-    # GLOBAL_UPDATE_FREQUENCY = int(os.getenv('GLOBAL_UPDATE_FREQUENCY'))
+    GLOBAL_UPDATE_FREQUENCY = int(os.getenv('GLOBAL_UPDATE_FREQUENCY'))
     BUFFER_LIMIT = int(os.getenv('BUFFER_SIZE')) * BATCH_SIZE
     # BUFFER_LIMIT = 100000
     FLOW_CNT = int(os.getenv('FLOW_CNT'))
@@ -173,7 +173,7 @@ def update_pkt_cnt_for_printing():
 
 def process_packet_with_hazelcast():
     pkt_num_of_cur_batch = 0
-    # uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
+    uniform_global_distance = Limit.BATCH_SIZE // Limit.GLOBAL_UPDATE_FREQUENCY
 
     while True:
         pkt, pkt_id, flow = Buffers.input_buffer.get()
@@ -190,9 +190,9 @@ def process_packet_with_hazelcast():
             empty_output_buffer()
 
         # if pkt_num_of_cur_batch % uniform_global_distance == 0 or pkt_num_of_cur_batch == Limit.BATCH_SIZE:
-        # if pkt_num_of_cur_batch == uniform_global_distance:
-        #     pkt_num_of_cur_batch = 0
-        #     global_state_update(10)
+        if pkt_num_of_cur_batch == uniform_global_distance:
+            pkt_num_of_cur_batch = 0
+            global_state_update(10)
 
         update_pkt_cnt_for_printing()
 
@@ -211,11 +211,11 @@ def generate_statistics():
     packet_rate = int(os.getenv('PACKET_RATE'))
     stamper_count = int(os.getenv('STAMPER_CNT'))
     flow_count = int(os.getenv('FLOW_CNT'))
-    # global_update_freq = int(os.getenv('GLOBAL_UPDATE_FREQUENCY'))
+    global_update_freq = int(os.getenv('GLOBAL_UPDATE_FREQUENCY'))
 
 
-    # filename = f'results/batch_{batch_size}-gf_{global_update_freq}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
-    filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
+    filename = f'results/batch_{batch_size}-gf_{global_update_freq}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
+    # filename = f'results/batch_{batch_size}-buf_{buffer_size}-pktrate_{packet_rate}-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
     print(f"Writing stats to {filename}")
 
     total_throughput_bps = 0

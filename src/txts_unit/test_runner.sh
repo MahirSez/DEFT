@@ -26,17 +26,16 @@ mkdir -p results
 
 stamper_counts=(1)
 flow_counts=(100)
-batches=(80)
-buffer_size=(1 5 10 20)
-effective_packet_rate=(60 100 120)
-
-  
+batches=(50)
+buffer_size=(10000) 
+effective_packet_rate=(40 60 80 100 120 140 160)
+global_update_freq=(1 5 10 15 20)
 
 
 docker-compose build
 echo "Tracking Time" > time_output.txt
 
-# for global_freq in "${global_update_freq[@]}"; do
+for global_freq in "${global_update_freq[@]}"; do
     for stamper_count in "${stamper_counts[@]}"; do
         for flow_count in "${flow_counts[@]}"; do
             for bs in "${batches[@]}"; do
@@ -54,11 +53,11 @@ echo "Tracking Time" > time_output.txt
                         sed -i~ "/^HZ_CLIENT_CNT=/s/=.*/=$nf_cnt/" .env
                         sed -i~ "/^GLOBAL_UPDATE_FREQUENCY=/s/=.*/=$global_freq/" .env
                         
-                        # filename=results/batch_"${bs}"-gf_"${global_freq}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
-                        filename=results/batch_"${bs}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
+                        filename=results/batch_"${bs}"-gf_"${global_freq}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
+                        # filename=results/batch_"${bs}"-buf_"${bfs}"-pktrate_"${pr}"-flow_cnt_"${flow_count}"-stamper_cnt_"${stamper_count}".csv
                         echo "Latency(ms), Throughput(byte/s), Throughput(pps), Packets Processed, Packets Dropped, Input Buffer Max Length, Output Buffer Max Length, Time in Input Buffer(ms), Time in Output Buffer(ms)" >> "$filename"
 
-                        for trial in {1..5}; do
+                        for trial in {1..3}; do
                             echo "Trial number $trial"
                             sed -i~ "/^TRIAL=/s/=.*/=$trial/" .env
 
@@ -78,5 +77,5 @@ echo "Tracking Time" > time_output.txt
             done
         done
     done
-# done
+done
 
