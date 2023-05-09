@@ -24,13 +24,11 @@ run_test() {
 rm -rf results/*
 mkdir -p results
 
-stamper_counts=(1)
-flow_counts=(100)
-batches=(80)
-buffer_size=(1 5 10 20)
-effective_packet_rate=(60 100 120)
-
-  
+stamper_counts=(1 2 3 4 5 6 7 8 9 10)
+flow_counts=(120 240 360 480 540)
+batches=(50)
+buffer_size=(10000) 
+effective_packet_rate=(10000)
 
 
 docker-compose build
@@ -64,10 +62,10 @@ echo "Tracking Time" > time_output.txt
 
                             echo "NF Count: " $nf_cnt >> time_output.txt
 
-                            # pr_per_flow=$(( (pr + flow_count - 1) / flow_count ))
+                            pr_per_flow=$(( (pr + flow_count - 1) / flow_count ))
 
                             start=$(date +%s.%N)
-                            run_test "$pr" "$flow_count"
+                            run_test "$pr_per_flow" "$flow_count"
                             end=$(date +%s.%N)
                             echo "Elapsed time: $(echo "$end - $start" | bc) seconds" >> time_output.txt
 
