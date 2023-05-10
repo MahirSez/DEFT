@@ -75,18 +75,20 @@ def plot_batchSize_vs_packetRate():
     fig.savefig('results/packets_dropped.png', format='png', dpi=1200)
     plt.close()
 
+
+
 def plot_flowCount_x_stamperCount():
     latency_data, throughput_data, pkt_dropped_data = [], [], []
-    for flow_count in [100]:
-        for stamper_count in [3, 6, 10, 20]:
-            # flow_count_per_nf = flow_count // 5
+    for flow_count in [120, 240, 360, 480, 540]:
+        for stamper_count in range(1, 11):
             latency, throughput, pkt_drop = [], [], []
-            for trial in range(1, 2):
-                file_name = f'results/batch_80-buf_10000-pktrate_10000-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
-                df = pd.read_csv(file_name)
-                latency.append(df.iloc[:, 0].mean(axis=0))
-                throughput.append(df.iloc[:, 2].sum(axis=0))
-                pkt_drop.append(df.iloc[:,  4].sum(axis=0))
+
+            # for trial in range(5):
+            file_name = f'results/batch_50-buf_10000-pktrate_10000-flow_cnt_{flow_count}-stamper_cnt_{stamper_count}.csv'
+            df = pd.read_csv(file_name)
+            latency.append(df.iloc[:, 0].mean(axis=0))
+            throughput.append(df.iloc[:, 2].sum(axis=0) / stamper_count)
+            pkt_drop.append(df.iloc[:,  4].sum(axis=0) / stamper_count)
 
             latency_data.append([
                 flow_count,
@@ -118,7 +120,8 @@ def plot_flowCount_x_stamperCount():
     lat_plt = sns.lineplot(data=latency_df, x="Stamper Count", y="Latency(ms)", hue="Flow Count", style="Flow Count", \
                            markers=True, dashes=False, palette=sns.color_palette('icefire'))
     fig = lat_plt.get_figure()
-    plt.xticks([3, 6, 10, 20])
+    plt.xticks([x for x in range(1, 11)])
+    plt.xticks([x for x in range(1, 11)])
     plt.ylim([0, 100])
     fig.savefig('results/latency.png', format='png', dpi=1200)
     plt.close()
@@ -333,8 +336,8 @@ def plot_globalUpdateFreq_vs_packetRate():
 
 
 if __name__ == "__main__":
-    plot_batchSize_vs_packetRate()
-    # plot_flowCount_x_stamperCount()
+    # plot_batchSize_vs_packetRate()
+    plot_flowCount_x_stamperCount()
     # plot_bufferSize_vs_packetRate()
     # plot_globalUpdateFreq_vs_packetRate()
     # df = pd.read_csv('results/batch_10-buf_1000-pktrate_250-flow_cnt_1-stamper_cnt_1.csv')
