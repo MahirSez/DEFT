@@ -53,11 +53,11 @@ def retrieve_data():
         "Latency": "Y",
         "PPS": "Z"})
 
-    # x_min = 24
-    # x_max = 25.6
-    
-    x_min = 23
-    x_max = 25.5
+    x_min = 23.3
+    x_max = 26
+
+    # x_min = 23
+    # x_max = 25.5
 
     
     with open('results/x_lims.txt', 'w') as file:
