@@ -48,7 +48,7 @@ class Buffers:
 class Limit:
     GLOBAL_UPDATE_IN_A_ROW = int(os.getenv('GLOBAL_UPDATE_IN_A_ROW'))
     BATCH_SIZE = int(os.getenv('BATCH_SIZE'))
-    GLOBAL_UPDATE_ON_EVERY = 200
+    GLOBAL_UPDATE_ON_EVERY = int(os.getenv('GLOBAL_UPDATE_ON_EVERY'))
     BUFFER_LIMIT = 4 * BATCH_SIZE
 
 class Statistics:

@@ -17,7 +17,7 @@ def fit_latency(ax, x, y):
     ax.set_xlim(left=x.values[0], right=x.values[len(x.values)-1])
     ax.tick_params(axis='x', labelsize=16)
     ax.tick_params(axis='y', labelsize=16)
-    ax.set_yticks(np.arange(0, y_lim, 10))
+    ax.set_yticks(np.arange(0, y_lim, 5))
     ax.set_xticks(np.arange(x.values[0], x.values[len(x.values)-1], 0.2))
     ax.legend(loc='upper left', fontsize='large')
 
@@ -52,8 +52,8 @@ def retrieve_data():
         "Latency": "Y",
         "PPS": "Z"})
 
-    x_min = 23.4
-    x_max = 26
+    x_min = 24
+    x_max = 25.6
 
     
     with open('results/x_lims.txt', 'w') as file:
