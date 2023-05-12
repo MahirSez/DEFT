@@ -10,16 +10,16 @@ def fit_latency(ax, x, y):
 
     ax.plot(x, y, marker='x', markersize=10, markeredgecolor='red', label='Latency')
 
-    ax.set_xlabel("Time(s)", fontsize=18)
-    ax.set_ylabel("Latency(ms)", fontsize=18)
-    y_lim = 101
+    ax.set_xlabel("Time(s)", fontsize=20)
+    ax.set_ylabel("Latency(ms)", fontsize=20)
+    y_lim = 41
     ax.set_ylim(0, y_lim)
     ax.set_xlim(left=x.values[0], right=x.values[len(x.values)-1])
     ax.tick_params(axis='x', labelsize=16)
     ax.tick_params(axis='y', labelsize=16)
     ax.set_yticks(np.arange(0, y_lim, 5))
     ax.set_xticks(np.arange(x.values[0], x.values[len(x.values)-1], 0.2))
-    ax.legend(loc='upper left', fontsize='large')
+    ax.legend(loc='upper left', fontsize=20)
 
     y_labels = ax.get_yticklabels()
     for y_label in y_labels:
@@ -31,17 +31,18 @@ def fit_latency(ax, x, y):
 def fit_throughput(ax2, x, z):
 
     ax2.plot(x, z, alpha=0.1, color="green", label='Throughput')
-    ax2.set_ylabel('Throughput(Kpps)', fontsize=16)
+    ax2.set_ylabel('Throughput(Kpps)', fontsize=20)
     ax2.fill_between(x, 0, z, color='green', alpha=0.1)
     y_max = 16
     ax2.set_yticks(np.arange(0, y_max, 2))
     ax2.set_ylim(0, y_max)
     ax2.tick_params(axis='y', labelsize=16)
-    leg = ax2.legend(loc='upper center', fontsize='large')
+    leg = ax2.legend(loc='upper center', fontsize=20)
 
     for line in leg.get_lines():
         line.set_linewidth(10.0)
         line.set_alpha(0.4)
+
 
 
 def retrieve_data():
@@ -52,8 +53,11 @@ def retrieve_data():
         "Latency": "Y",
         "PPS": "Z"})
 
-    x_min = 24
-    x_max = 25.6
+    # x_min = 24
+    # x_max = 25.6
+    
+    x_min = 23
+    x_max = 25.5
 
     
     with open('results/x_lims.txt', 'w') as file:
@@ -88,7 +92,8 @@ def main():
     plt.draw()
     plt.show()
 
-    fig.savefig('results/timelapse.png')
+    fig.savefig('results/timelapse.pdf', format='pdf', dpi=1200)
+    # fig.savefig('results/timelapse.png')
 
 
 
