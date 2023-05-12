@@ -24,11 +24,11 @@ run_test() {
 rm -rf results/*
 mkdir -p results
 
-batches=(80)
+batches=(50)
 stamper_counts=(1)
 
 flow_counts=(100)
-effective_packet_rate=(10000)
+effective_packet_rate=(100)
 
 
 docker-compose build
